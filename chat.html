@@ -3,216 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groups | Teams Edition</title>
+    <title>Groups</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
+        /* Color Variables for easy Toggling */
         :root { 
-            --primary: #5b5fc7; /* Teams Purple */
+            --primary: #5b5fc7; 
             --bg: #11100f; 
             --sidebar: #201f1e; 
             --border: #3b3a39; 
-            --hover: #2d2c2c;
-            --text-secondary: #adadad;
+            --text: #ffffff;
+            --input-bg: #2d2c2c;
         }
 
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        /* Light Mode Variables */
+        .light-mode {
+            --bg: #f5f5f5;
+            --sidebar: #ffffff;
+            --border: #edebe9;
+            --text: #242424;
+            --input-bg: #ffffff;
+        }
 
-        /* Sidebar & Search */
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar & Search Dropdown */
         .sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
-        .sidebar-header { padding: 16px; }
-        .search-container { position: relative; }
-        .search-input { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border); background: #2d2c2c; color: white; outline: none; }
+        .search-container { padding: 16px; position: relative; }
+        .search-input { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); box-sizing: border-box; }
         
-        /* SEARCH DROPDOWN */
         #search-results { 
-            position: absolute; top: 100%; left: 0; right: 0; 
-            background: #2d2c2c; border: 1px solid var(--border); 
+            position: absolute; top: 60px; left: 16px; right: 16px; 
+            background: var(--input-bg); border: 1px solid var(--primary); 
             border-radius: 4px; z-index: 1000; display: none;
-            box-shadow: 0 10px 15px rgba(0,0,0,0.5);
         }
-        .search-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-        .search-item:hover { background: var(--primary); }
-        .avatar-circle { width: 30px; height: 30px; background: #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
+        .search-item { padding: 12px; cursor: pointer; color: var(--text); border-bottom: 1px solid var(--border); }
+        .search-item:hover { background: var(--primary); color: white; }
 
-        /* Contact List */
-        .contact-list { flex: 1; overflow-y: auto; }
-        .contact-item { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
-        .contact-item:hover { background: var(--hover); }
-        .contact-item.active { background: var(--hover); border-left: 3px solid var(--primary); }
-
-        /* Main Chat */
+        /* Main Chat Area */
         .main-container { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { height: 60px; padding: 0 20px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .chat-header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
-        /* Message Bubbles */
-        .msg { max-width: 65%; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; position: relative; }
-        .msg.sent { background: var(--primary); align-self: flex-end; }
-        .msg.received { background: #3b3a39; align-self: flex-start; }
-        .msg-sender { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+        /* Input Area (Disabled state) */
+        .input-area { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        .input-area.disabled { opacity: 0.5; pointer-events: none; }
+        #message-input { flex: 1; padding: 12px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
+        #send-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
 
-        /* Input area */
-        .input-area { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
-        #message-input { flex: 1; padding: 12px; background: #2d2c2c; border: 1px solid var(--border); border-radius: 6px; color: white; outline: none; }
-        #send-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-
-        /* SETTINGS PANEL (Teams Themed) */
-        #settings-panel { 
-            position: fixed; right: -350px; top: 0; width: 350px; height: 100%; 
-            background: var(--sidebar); border-left: 1px solid var(--border); 
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px; box-sizing: border-box; z-index: 2000;
-        }
+        /* Settings Panel */
+        #settings-panel { position: fixed; right: -350px; top: 0; width: 350px; height: 100%; background: var(--sidebar); border-left: 1px solid var(--border); transition: 0.3s; padding: 24px; box-sizing: border-box; z-index: 2000; }
         #settings-panel.open { right: 0; }
-        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .settings-option { background: var(--hover); padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-        .btn-danger { background: #c43131; color: white; border: none; padding: 12px; border-radius: 4px; width: 100%; cursor: pointer; margin-top: 20px; }
-
-        /* Icon Button */
-        .icon-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 8px; border-radius: 4px; }
-        .icon-btn:hover { background: var(--hover); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header">
-            <h2 style="font-size: 1.2rem; margin-bottom: 15px;">Chat</h2>
-            <div class="search-container">
-                <input type="text" id="contact-search" class="search-input" placeholder="Start a new chat...">
-                <div id="search-results"></div>
-            </div>
+        <div class="search-container">
+            <input type="text" id="contact-search" class="search-input" placeholder="Search email...">
+            <div id="search-results"></div>
         </div>
-        <div class="contact-list" id="recent-chats">
-            </div>
+        <div id="recent-chats" class="contact-list"></div>
     </div>
 
     <div class="main-container">
         <div class="chat-header">
-            <div>
-                <strong id="current-chat-name">Select a contact to message</strong>
-            </div>
-            <button class="icon-btn" onclick="toggleSettings()">⚙️</button>
+            <strong id="current-chat-name">No chat selected</strong>
+            <button onclick="toggleSettings()" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">⚙️</button>
         </div>
-        
         <div id="messages"></div>
-
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message...">
+        <div class="input-area disabled" id="chat-controls">
+            <input type="text" id="message-input" placeholder="Select a chat to start typing...">
             <button id="send-btn">Send</button>
         </div>
     </div>
 
     <div id="settings-panel">
-        <div class="settings-header">
-            <h2>Settings</h2>
-            <button class="icon-btn" onclick="toggleSettings()">✕</button>
-        </div>
-        
-        <div class="settings-option">
+        <h2>Settings</h2>
+        <div style="margin-bottom: 20px; display:flex; justify-content:space-between;">
             <span>Dark Mode</span>
-            <input type="checkbox" checked disabled>
+            <input type="checkbox" id="dark-mode-toggle" checked>
         </div>
-        <div class="settings-option">
-            <span>Desktop Notifications</span>
-            <input type="checkbox">
-        </div>
-        <div class="settings-option">
-            <span>Read Receipts</span>
-            <input type="checkbox" checked>
-        </div>
-
-        <div style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px;">
-            <p style="color: var(--text-secondary); font-size: 0.8rem;">Signed in as:</p>
-            <p id="user-email-display" style="font-weight: bold;"></p>
-            <button class="btn-danger" onclick="logout()">Sign Out</button>
-        </div>
+        <button onclick="logout()" style="width:100%; padding:10px; background:#c43131; color:white; border:none; border-radius:4px; cursor:pointer;">Sign Out</button>
+        <button onclick="toggleSettings()" style="margin-top:10px; width:100%; background:none; color:var(--text); border:1px solid var(--border); cursor:pointer; padding:5px;">Close</button>
     </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, onValue, serverTimestamp, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // USE YOUR REAL API KEY HERE (The one from your main.js)
-    const firebaseConfig = {
-        apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
-        authDomain: "groups-85638.firebaseapp.com",
-        databaseURL: "https://groups-85638-default-rtdb.firebaseio.com/", 
-        projectId: "groups-85638",
-        storageBucket: "groups-85638.appspot.com",
-        messagingSenderId: "751289139753",
-        appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
-    };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
+            authDomain: "groups-85638.firebaseapp.com",
+            databaseURL: "https://groups-85638-default-rtdb.firebaseio.com/",
+            projectId: "groups-85638",
+            storageBucket: "groups-85638.appspot.com",
+            messagingSenderId: "751289139753",
+            appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
+        };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-    let currentUser = null;
-    let activeChatEmail = "general"; // Set a default room so it works instantly
+        let currentUser = null;
+        let activeChatEmail = null;
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('user-email-display').innerText = user.email;
-            startChat("general"); // Auto-load general chat on login
-        } else {
-            window.location.href = "index.html";
-        }
-    });
+        // 1. DARK MODE TOGGLE LOGIC
+        const modeToggle = document.getElementById('dark-mode-toggle');
+        modeToggle.addEventListener('change', () => {
+            document.body.classList.toggle('light-mode', !modeToggle.checked);
+        });
 
-    window.startChat = function(email) {
-        activeChatEmail = email;
-        document.getElementById('current-chat-name').innerText = email;
-        
-        // Create a unique ID for the chat room
-        const chatID = email === "general" ? "general" : [currentUser.email, email].sort().join('_').replace(/\./g, '_');
-        const messagesRef = ref(db, 'chats/' + chatID);
-
-        // Listen for messages
-        onValue(messagesRef, (snapshot) => {
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = "";
-            const data = snapshot.val();
-            if (data) {
-                Object.values(data).forEach(m => {
-                    const div = document.createElement('div');
-                    const isMe = m.sender === currentUser.email;
-                    div.className = `msg ${isMe ? 'sent' : 'received'}`;
-                    div.innerHTML = `<span class="msg-sender">${m.sender}</span>${m.text}`;
-                    messagesDiv.appendChild(div);
-                });
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // 2. AUTH & USER LIST FETCH
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+            } else {
+                window.location.href = "index.html";
             }
         });
-    };
 
-    document.getElementById('send-btn').addEventListener('click', () => {
-        const messageInput = document.getElementById('message-input');
-        const text = messageInput.value;
-        
-        if (text.trim() !== "" && currentUser) {
-            const chatID = activeChatEmail === "general" ? "general" : [currentUser.email, activeChatEmail].sort().join('_').replace(/\./g, '_');
+        // 3. REAL USER SEARCH LOGIC
+        const searchInput = document.getElementById('contact-search');
+        const resultsDiv = document.getElementById('search-results');
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase().trim();
+            if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
+
+            // Look through 'users' folder in DB
+            get(ref(db, 'users')).then((snapshot) => {
+                if (snapshot.exists()) {
+                    resultsDiv.innerHTML = "";
+                    const users = snapshot.val();
+                    let found = false;
+
+                    Object.values(users).forEach(user => {
+                        if (user.email.toLowerCase().includes(query) && user.email !== currentUser.email) {
+                            found = true;
+                            const item = document.createElement('div');
+                            item.className = 'search-item';
+                            item.innerText = user.email;
+                            item.onclick = () => {
+                                startChat(user.email);
+                                resultsDiv.style.display = 'none';
+                                searchInput.value = "";
+                            };
+                            resultsDiv.appendChild(item);
+                        }
+                    });
+                    resultsDiv.style.display = found ? 'block' : 'none';
+                }
+            });
+        });
+
+        // 4. CHAT FUNCTIONALITY
+        function startChat(email) {
+            activeChatEmail = email;
+            document.getElementById('current-chat-name').innerText = email;
             
-            push(ref(db, 'chats/' + chatID), {
-                sender: currentUser.email,
-                text: text,
-                timestamp: serverTimestamp()
-            }).then(() => {
-                console.log("Message sent!");
-                messageInput.value = "";
-            }).catch((error) => {
-                alert("Error sending: " + error.message);
+            // Enable typing
+            const controls = document.getElementById('chat-controls');
+            controls.classList.remove('disabled');
+            document.getElementById('message-input').placeholder = "Type a message...";
+
+            const chatID = [currentUser.email, email].sort().join('_').replace(/\./g, '_');
+            
+            onValue(ref(db, 'chats/' + chatID), (snap) => {
+                const msgDiv = document.getElementById('messages');
+                msgDiv.innerHTML = "";
+                if (snap.exists()) {
+                    Object.values(snap.val()).forEach(m => {
+                        const d = document.createElement('div');
+                        d.style.alignSelf = m.sender === currentUser.email ? 'flex-end' : 'flex-start';
+                        d.style.background = m.sender === currentUser.email ? 'var(--primary)' : 'var(--border)';
+                        d.style.padding = '10px';
+                        d.style.borderRadius = '8px';
+                        d.innerText = m.text;
+                        msgDiv.appendChild(d);
+                    });
+                    msgDiv.scrollTop = msgDiv.scrollHeight;
+                }
             });
         }
-    });
 
-    // Enter key support
-    document.getElementById('message-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') document.getElementById('send-btn').click();
-    });
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const input = document.getElementById('message-input');
+            if (input.value && activeChatEmail) {
+                const chatID = [currentUser.email, activeChatEmail].sort().join('_').replace(/\./g, '_');
+                push(ref(db, 'chats/' + chatID), {
+                    sender: currentUser.email,
+                    text: input.value,
+                    timestamp: serverTimestamp()
+                });
+                input.value = "";
+            }
+        });
 
-    window.toggleSettings = () => document.getElementById('settings-panel').classList.toggle('open');
-    window.logout = () => signOut(auth);
-</script>
+        window.toggleSettings = () => document.getElementById('settings-panel').classList.toggle('open');
+        window.logout = () => signOut(auth);
+    </script>
 </body>
 </html>
