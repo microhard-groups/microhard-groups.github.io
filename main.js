@@ -5,7 +5,7 @@ import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1
 const firebaseConfig = {
     apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
     authDomain: "groups-85638.firebaseapp.com",
-    // FIXED: Using your actual Singapore Database URL
+    // CRITICAL: Updated to your Singapore URL from screenshot
     databaseURL: "https://groups-85638-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "groups-85638",
     storageBucket: "groups-85638.appspot.com",
@@ -21,35 +21,22 @@ const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const authBtn = document.getElementById('auth-btn');
 const statusMsg = document.getElementById('status-message');
-const toggleLink = document.getElementById('toggle-link');
-const authTitle = document.getElementById('auth-title');
 
 let isLoginMode = false;
-
-toggleLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    isLoginMode = !isLoginMode;
-    authTitle.innerText = isLoginMode ? "Welcome Back" : "Groups";
-    authBtn.innerText = isLoginMode ? "Log In" : "Create Account";
-    toggleLink.innerText = isLoginMode ? "Sign Up" : "Log In";
-});
 
 authBtn.addEventListener('click', () => {
     const email = emailInput.value;
     const password = passwordInput.value;
 
-    if (!email || !password) {
-        statusMsg.innerText = "Please fill in all fields.";
-        return;
-    }
+    if (!email || !password) return;
 
-    authBtn.disabled = true;
-    const authFunction = isLoginMode ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
+    authBtn.innerText = "Processing...";
+    const authFunc = isLoginMode ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
 
-    authFunction(auth, email, password)
+    authFunc(auth, email, password)
         .then((userCredential) => {
+            // This is the part that fixes the 'null' database issue
             if (!isLoginMode) {
-                // Save user to database so they are searchable
                 set(ref(db, 'users/' + userCredential.user.uid), {
                     email: email,
                     uid: userCredential.user.uid
@@ -61,7 +48,7 @@ authBtn.addEventListener('click', () => {
             }
         })
         .catch((error) => {
-            authBtn.disabled = false;
+            authBtn.innerText = "Try Again";
             statusMsg.innerText = error.message;
         });
 });

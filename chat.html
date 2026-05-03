@@ -3,183 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <title>Groups</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="logo.png">
     <style>
-        :root { 
-            --primary: #5b5fc7; --bg: #11100f; --sidebar: #201f1e; 
-            --border: #3b3a39; --text: #ffffff; --hover: #2d2c2c;
-        }
-        .light-mode {
-            --bg: #f5f5f5; --sidebar: #ffffff; --border: #edebe9; 
-            --text: #242424; --hover: #f0f0f0;
-        }
+        :root { --primary: #5b5fc7; --bg: #11100f; --text: #ffffff; --border: #3b3a39; }
+        .light-mode { --bg: #f5f5f5; --text: #242424; --border: #edebe9; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; }
-        
-        .sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .search-area { padding: 15px; position: relative; }
-        .search-input { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; }
-        
-        #search-dropdown { 
-            position: absolute; top: 55px; left: 15px; right: 15px; 
-            background: var(--sidebar); border: 1px solid var(--primary); 
-            border-radius: 4px; z-index: 10; display: none; 
-        }
-        .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); }
-        .search-item:hover { background: var(--primary); color: white; }
-
+        .sidebar { width: 300px; border-right: 1px solid var(--border); background: #201f1e; padding: 15px; }
         .main { flex: 1; display: flex; flex-direction: column; }
-        .header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 70%; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .footer { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        .footer.disabled { opacity: 0.3; pointer-events: none; }
+        .search-results { background: #2d2c2c; border: 1px solid var(--primary); border-radius: 4px; margin-top: 5px; cursor: pointer; }
+        .msg { padding: 8px 12px; border-radius: 6px; max-width: 70%; }
         .sent { background: var(--primary); align-self: flex-end; color: white; }
         .received { background: var(--border); align-self: flex-start; }
-
-        .footer { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
-        .footer.locked { opacity: 0.3; pointer-events: none; }
-        #msg-input { flex: 1; padding: 10px; background: var(--sidebar); border: 1px solid var(--border); color: var(--text); border-radius: 4px; }
-        
-        #settings-menu { position: fixed; right: -320px; top: 0; width: 300px; height: 100%; background: var(--sidebar); border-left: 1px solid var(--border); transition: 0.3s; padding: 20px; z-index: 100; }
-        #settings-menu.open { right: 0; }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
-        <div class="search-area">
-            <input type="text" id="user-search" class="search-input" placeholder="Find people...">
-            <div id="search-dropdown"></div>
-        </div>
-        <div id="contact-list"></div>
+        <input type="text" id="find-user" placeholder="Search email..." style="width:100%; padding:8px;">
+        <div id="results" class="search-results"></div>
     </div>
-
     <div class="main">
-        <div class="header">
-            <strong id="chat-title">Select a contact</strong>
-            <button onclick="document.getElementById('settings-menu').classList.toggle('open')" style="background:none; border:none; cursor:pointer; color:var(--text); font-size:1.2rem;">⚙️</button>
-        </div>
         <div id="messages"></div>
-        <div class="footer locked" id="chat-footer">
-            <input type="text" id="msg-input" placeholder="Type a message...">
-            <button id="send-btn" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Send</button>
+        <div class="footer disabled" id="input-bar">
+            <input type="text" id="msg-input" placeholder="Type here..." style="flex:1;">
+            <button id="send">Send</button>
         </div>
-    </div>
-
-    <div id="settings-menu">
-        <h3>Settings</h3>
-        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <span>Dark Mode</span>
-            <input type="checkbox" id="dark-mode-toggle" checked>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <span>Notifications</span>
-            <input type="checkbox" checked>
-        </div>
-        <button onclick="auth.signOut()" style="width:100%; padding:10px; background:#c43131; color:white; border:none; border-radius:4px; margin-top:20px; cursor:pointer;">Sign Out</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, push, onValue, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, onValue, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
             authDomain: "groups-85638.firebaseapp.com",
             databaseURL: "https://groups-85638-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "groups-85638",
-            storageBucket: "groups-85638.appspot.com",
-            messagingSenderId: "751289139753",
             appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
         };
 
         const app = initializeApp(firebaseConfig);
-        window.auth = getAuth(app);
+        const auth = getAuth(app);
         const db = getDatabase(app);
+        let activeUser = null;
 
-        let currentUser = null;
-        let activeTarget = null;
+        onAuthStateChanged(auth, user => { if (!user) window.location.href = "index.html"; });
 
-        // Dark Mode
-        document.getElementById('dark-mode-toggle').addEventListener('change', (e) => {
-            document.body.classList.toggle('light-mode', !e.target.checked);
-        });
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) currentUser = user;
-            else window.location.href = "index.html";
-        });
-
-        // Search Logic
-        const searchInput = document.getElementById('user-search');
-        const dropdown = document.getElementById('search-dropdown');
-
-        searchInput.addEventListener('input', () => {
-            const val = searchInput.value.toLowerCase().trim();
-            dropdown.innerHTML = "";
-            if (val.length < 2) { dropdown.style.display = 'none'; return; }
-
-            get(ref(db, 'users')).then((snap) => {
+        document.getElementById('find-user').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (query.length < 3) return;
+            get(ref(db, 'users')).then(snap => {
+                const results = document.getElementById('results');
+                results.innerHTML = "";
                 if (snap.exists()) {
-                    let matches = 0;
                     Object.values(snap.val()).forEach(u => {
-                        if (u.email.includes(val) && u.email !== currentUser.email) {
-                            matches++;
+                        if (u.email.includes(query) && u.email !== auth.currentUser.email) {
                             const div = document.createElement('div');
-                            div.className = 'search-item';
                             div.innerText = u.email;
-                            div.onclick = () => {
-                                startChat(u.email);
-                                dropdown.style.display = 'none';
-                                searchInput.value = "";
-                            };
-                            dropdown.appendChild(div);
+                            div.onclick = () => startChat(u.email);
+                            results.appendChild(div);
                         }
                     });
-                    dropdown.style.display = matches > 0 ? 'block' : 'none';
                 }
             });
         });
 
         function startChat(email) {
-            activeTarget = email;
-            document.getElementById('chat-title').innerText = email;
-            document.getElementById('chat-footer').classList.remove('locked');
-
-            const myId = currentUser.email.replace(/\./g, '_');
-            const theirId = email.replace(/\./g, '_');
-            const chatID = [myId, theirId].sort().join('--');
-
-            onValue(ref(db, 'chats/' + chatID), (snap) => {
-                const msgBox = document.getElementById('messages');
-                msgBox.innerHTML = "";
+            activeUser = email;
+            document.getElementById('input-bar').classList.remove('disabled');
+            const chatID = [auth.currentUser.email, email].sort().map(e => e.replace(/\./g, '_')).join('--');
+            onValue(ref(db, 'chats/' + chatID), snap => {
+                const box = document.getElementById('messages');
+                box.innerHTML = "";
                 if (snap.exists()) {
                     Object.values(snap.val()).forEach(m => {
-                        const d = document.createElement('div');
-                        d.className = `msg ${m.sender === currentUser.email ? 'sent' : 'received'}`;
-                        d.innerText = m.text;
-                        msgBox.appendChild(d);
+                        const div = document.createElement('div');
+                        div.className = `msg ${m.sender === auth.currentUser.email ? 'sent' : 'received'}`;
+                        div.innerText = m.text;
+                        box.appendChild(div);
                     });
-                    msgBox.scrollTop = msgBox.scrollHeight;
+                    box.scrollTop = box.scrollHeight;
                 }
             });
         }
 
-        document.getElementById('send-btn').addEventListener('click', () => {
+        document.getElementById('send').onclick = () => {
             const input = document.getElementById('msg-input');
-            if (input.value.trim() && activeTarget) {
-                const myId = currentUser.email.replace(/\./g, '_');
-                const theirId = activeTarget.replace(/\./g, '_');
-                const chatID = [myId, theirId].sort().join('--');
-
-                push(ref(db, 'chats/' + chatID), {
-                    sender: currentUser.email,
-                    text: input.value,
-                    timestamp: serverTimestamp()
-                });
-                input.value = "";
-            }
-        });
+            if (!input.value || !activeUser) return;
+            const chatID = [auth.currentUser.email, activeUser].sort().map(e => e.replace(/\./g, '_')).join('--');
+            push(ref(db, 'chats/' + chatID), {
+                sender: auth.currentUser.email,
+                text: input.value,
+                time: serverTimestamp()
+            }).then(() => input.value = "");
+        };
     </script>
 </body>
 </html>
