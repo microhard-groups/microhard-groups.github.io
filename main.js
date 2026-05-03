@@ -1,68 +1,50 @@
-// 1. Import the functions you need from the Firebase SDKs
+// 1. Imports (Only once!)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// 2. Your web app's Firebase configuration
-// PASTE YOUR KEYS HERE FROM THE FIREBASE CONSOLE
+// 2. Your Config (Keep your actual keys here)
 const firebaseConfig = {
-  apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
+  apiKey: "YOUR_ACTUAL_API_KEY",
   authDomain: "groups-85638.firebaseapp.com",
   projectId: "groups-85638",
-  storageBucket: "groups-85638.firebasestorage.app",
+  storageBucket: "groups-85638.appspot.com",
   messagingSenderId: "751289139753",
-  appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238",
-  measurementId: "G-0SPQGZB6HK"
+  appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
 };
 
-// 3. Initialize Firebase
+// 3. Initialize (Only once!)
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const auth = getAuth();
-
-// Reference the elements
+// 4. Elements
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const signUpBtn = document.getElementById('signup-btn');
 const statusMsg = document.getElementById('status-message');
 
-// The logic to create the user
+// 5. Logic
 signUpBtn.addEventListener('click', () => {
     const email = emailInput.value;
     const password = passwordInput.value;
 
+    if (!email || !password) {
+        statusMsg.innerText = "Fill in both fields, genius.";
+        return;
+    }
+
+    signUpBtn.innerText = "Joining...";
+    signUpBtn.disabled = true;
+
     createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-            // It worked!
-            statusMsg.style.color = "green";
-            statusMsg.innerText = "Success! Account created.";
-            console.log("User created:", userCredential.user);
+            statusMsg.style.color = "#28a745";
+            statusMsg.innerText = "Success! Welcome to Groups.";
+            console.log("Logged in:", userCredential.user);
         })
         .catch((error) => {
-            // It failed (e.g., password too short, email already exists)
-            statusMsg.style.color = "red";
+            signUpBtn.innerText = "Sign Up";
+            signUpBtn.disabled = false;
+            statusMsg.style.color = "#dc3545";
             statusMsg.innerText = error.message;
-        });
-});
-
-// 4. Reference your HTML elements
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const signUpBtn = document.getElementById('signup-btn');
-
-// 5. The Logic
-signUpBtn.addEventListener('click', () => {
-    const email = emailInput.value;
-    const password = passwordInput.value;
-
-    createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-            alert("Account Created!");
-            console.log("User:", userCredential.user);
-        })
-        .catch((error) => {
-            alert(error.message);
         });
 });
