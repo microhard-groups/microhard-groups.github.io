@@ -26,7 +26,6 @@
             overflow: hidden;
         }
 
-        /* Decorative background blobs */
         .blob {
             position: absolute;
             width: 300px;
@@ -51,23 +50,9 @@
             text-align: center;
         }
 
-        h2 {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.025em;
-        }
-
-        p.subtitle {
-            color: #94a3b8;
-            margin-bottom: 32px;
-            font-size: 0.9rem;
-        }
-
-        .input-group {
-            margin-bottom: 16px;
-            text-align: left;
-        }
+        h2 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.025em; }
+        p.subtitle { color: #94a3b8; margin-bottom: 32px; font-size: 0.9rem; }
+        .input-group { margin-bottom: 16px; text-align: left; }
 
         input {
             width: 100%;
@@ -77,15 +62,7 @@
             border-radius: 12px;
             color: white;
             font-size: 1rem;
-            transition: all 0.2s;
             box-sizing: border-box;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.15);
         }
 
         button {
@@ -98,29 +75,11 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
             margin-top: 10px;
         }
 
-        button:hover {
-            background: #0076e4;
-            transform: translateY(-1px);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            background: #334155;
-            cursor: not-allowed;
-        }
-
-        #status-message {
-            margin-top: 20px;
-            font-size: 0.85rem;
-            min-height: 1.2em;
-        }
+        button:disabled { background: #334155; cursor: not-allowed; }
+        #status-message { margin-top: 20px; font-size: 0.85rem; color: #ff4b4b; }
     </style>
 </head>
 <body>
@@ -129,26 +88,25 @@
     <div class="blob" style="bottom: 10%; right: 10%; background: #7c3aed;"></div>
 
     <div class="auth-container">
-    <h2 id="auth-title">Groups</h2>
-    <p class="subtitle" id="auth-subtitle">Enter your details to join the conversation.</p>
-    
-    <div class="input-group">
-        <input type="email" id="email" placeholder="Email Address" spellcheck="false">
-    </div>
-    
-    <div class="input-group">
-        <input type="password" id="password" placeholder="Password">
-    </div>
+        <h2 id="auth-title">Groups</h2>
+        <p class="subtitle" id="auth-subtitle">Enter your details to join the conversation.</p>
+        
+        <div class="input-group">
+            <input type="email" id="email" placeholder="Email Address" spellcheck="false">
+        </div>
+        
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Password">
+        </div>
 
-    <button id="auth-btn">Create Account</button>
-    
-    <p id="status-message"></p>
+        <button id="auth-btn" onclick="handleAuth()">Continue</button>
+        
+        <p id="status-message"></p>
 
-    <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 20px;">
-        <span id="toggle-text">Already have an account?</span> 
-        <a href="#" id="toggle-link" style="color: #0084ff; text-decoration: none; font-weight: 600;">Log In</a>
-    </p>
-</div>
+        <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 20px;">
+            <span id="toggle-text">Need an account? Just enter your details and click continue.</span> 
+        </p>
+    </div>
 
     <script type="module" src="main.js"></script>
 </body>
