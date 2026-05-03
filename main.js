@@ -33,10 +33,13 @@ signUpBtn.addEventListener('click', () => {
     signUpBtn.disabled = true;
 
     createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
+.then((userCredential) => {
             statusMsg.style.color = "#4ade80";
             statusMsg.innerText = "Success! Account created.";
             console.log("Success:", userCredential.user);
+            
+            // This is the "teleport" command
+            window.location.href = "chat.html"; 
         })
         .catch((error) => {
             signUpBtn.innerText = "Create Account";
