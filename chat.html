@@ -1,32 +1,89 @@
 <!DOCTYPE html>
-<html style="background:#11100f;">
+<html style="background:#11100f; color:white;">
+
 <head>
-    <title>Groups</title>
+    <title>Groups - Chat</title>
     <style>
-        body { margin: 0; background: #11100f; color: white; font-family: sans-serif; display: flex; height: 100vh; }
-        .sidebar { width: 300px; border-right: 1px solid #3b3a39; background: #201f1e; display: flex; flex-direction: column; padding: 15px; }
-        input { width: 100%; padding: 10px; background: #11100f; border: 1px solid #3b3a39; color: white; border-radius: 4px; box-sizing: border-box; }
-        #results { margin-top: 10px; background: #2d2c2c; border-radius: 4px; overflow: hidden; }
-        .user-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #3b3a39; }
-        .user-item:hover { background: #5b5fc7; }
-        .main { flex: 1; display: flex; flex-direction: column; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px; border-radius: 6px; max-width: 70%; background: #3b3a39; }
-        .sent { align-self: flex-end; background: #5b5fc7; }
-        .input-area { padding: 20px; border-top: 1px solid #3b3a39; display: flex; gap: 10px; }
-        button { background: #5b5fc7; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            font-family: sans-serif;
+        }
+
+        .sidebar {
+            width: 300px;
+            border-right: 1px solid #3b3a39;
+            background: #201f1e;
+            padding: 15px;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #11100f;
+            border: 1px solid #3b3a39;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        #results {
+            background: #2d2c2c;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .user-link {
+            padding: 10px;
+            border-bottom: 1px solid #3b3a39;
+        }
+
+        .user-link:hover {
+            background: #5b5fc7;
+        }
+
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sent {
+            align-self: flex-end;
+            background: #5b5fc7;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .recv {
+            align-self: flex-start;
+            background: #3b3a39;
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
+
 <body>
     <div class="sidebar">
-        <input type="text" id="search" placeholder="Search email...">
+        <input type="text" id="search" placeholder="Search by email...">
         <div id="results"></div>
     </div>
     <div class="main">
         <div id="messages"></div>
-        <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Select a user to chat..." disabled>
-            <button id="sendBtn" disabled>Send</button>
+        <div style="padding: 20px; border-top: 1px solid #3b3a39; display: flex; gap: 10px;">
+            <input type="text" id="msgInput" placeholder="Select a contact..." style="margin:0;">
+            <button id="sendBtn"
+                style="background:#5b5fc7; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Send</button>
         </div>
     </div>
 
@@ -48,28 +105,27 @@
         const db = getDatabase(app);
         let activeTarget = null;
 
-        onAuthStateChanged(auth, u => { if(!u) window.location.href="index.html"; });
+        onAuthStateChanged(auth, u => { if (!u) window.location.href = "index.html"; });
 
         document.getElementById('search').oninput = async (e) => {
             const query = e.target.value.toLowerCase().trim();
             const resDiv = document.getElementById('results');
             resDiv.innerHTML = "";
-            if(query.length < 3) return;
+            if (query.length < 3) return;
 
             const snap = await get(ref(db, 'users'));
-            if(snap.exists()){
+            if (snap.exists()) {
                 Object.values(snap.val()).forEach(user => {
-                    if(user.email.includes(query) && user.email !== auth.currentUser.email){
-                        const d = document.createElement('div');
-                        d.className = "user-item";
-                        d.innerText = user.email;
-                        d.onclick = () => {
+                    if (user.email.includes(query) && user.email !== auth.currentUser.email) {
+                        const div = document.createElement('div');
+                        div.className = "user-link";
+                        div.innerText = user.email;
+                        div.onclick = () => {
                             activeTarget = user.email;
-                            document.getElementById('msgInput').disabled = false;
-                            document.getElementById('sendBtn').disabled = false;
+                            document.getElementById('msgInput').placeholder = "Chatting with " + user.email;
                             loadMessages(user.email);
                         };
-                        resDiv.appendChild(d);
+                        resDiv.appendChild(div);
                     }
                 });
             }
@@ -80,12 +136,12 @@
             onValue(ref(db, 'chats/' + chatID), snap => {
                 const mBox = document.getElementById('messages');
                 mBox.innerHTML = "";
-                if(snap.exists()){
+                if (snap.exists()) {
                     Object.values(snap.val()).forEach(m => {
-                        const div = document.createElement('div');
-                        div.className = "msg " + (m.sender === auth.currentUser.email ? "sent" : "");
-                        div.innerText = m.text;
-                        mBox.appendChild(div);
+                        const d = document.createElement('div');
+                        d.className = m.sender === auth.currentUser.email ? "sent" : "recv";
+                        d.innerText = m.text;
+                        mBox.appendChild(d);
                     });
                     mBox.scrollTop = mBox.scrollHeight;
                 }
@@ -94,7 +150,7 @@
 
         document.getElementById('sendBtn').onclick = () => {
             const val = document.getElementById('msgInput').value;
-            if(!val || !activeTarget) return;
+            if (!val || !activeTarget) return;
             const chatID = [auth.currentUser.email, activeTarget].sort().map(x => x.replace(/\./g, '_')).join('--');
             push(ref(db, 'chats/' + chatID), {
                 sender: auth.currentUser.email,
@@ -105,4 +161,5 @@
         };
     </script>
 </body>
+
 </html>

@@ -14,21 +14,30 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+// Attach this to your button's onclick in HTML: onclick="handleAuth()"
 window.handleAuth = async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const btn = document.getElementById('auth-btn');
+
+    if (!email || !password) return alert("Fill in both fields!");
+    btn.innerText = "Connecting...";
+
     try {
-        let userCredential;
+        let userCred;
         try {
-            userCredential = await signInWithEmailAndPassword(auth, email, password);
+            userCred = await signInWithEmailAndPassword(auth, email, password);
         } catch (e) {
-            userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            // This creates the 'users' entry in your Singapore DB
-            await set(ref(db, 'users/' + userCredential.user.uid), {
+            userCred = await createUserWithEmailAndPassword(auth, email, password);
+            // This is what puts you in the DB so others can find you!
+            await set(ref(db, 'users/' + userCred.user.uid), {
                 email: email,
-                uid: userCredential.user.uid
+                uid: userCred.user.uid
             });
         }
         window.location.href = "chat.html";
-    } catch (err) { alert(err.message); }
+    } catch (err) {
+        alert("Error: " + err.message);
+        btn.innerText = "Log In / Sign Up";
+    }
 };
