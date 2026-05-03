@@ -17,28 +17,18 @@ const db = getDatabase(app);
 window.handleAuth = async () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const btn = document.getElementById('auth-btn');
-
-    if (!email || !password) return;
-    btn.disabled = true;
-
     try {
         let userCredential;
         try {
-            // Try login
             userCredential = await signInWithEmailAndPassword(auth, email, password);
         } catch (e) {
-            // If login fails, try signup
             userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            // Crucial: Save to 'users' folder so search works
+            // This creates the 'users' entry in your Singapore DB
             await set(ref(db, 'users/' + userCredential.user.uid), {
                 email: email,
                 uid: userCredential.user.uid
             });
         }
         window.location.href = "chat.html";
-    } catch (error) {
-        alert(error.message);
-        btn.disabled = false;
-    }
+    } catch (err) { alert(err.message); }
 };
