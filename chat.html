@@ -1,146 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html style="background:#11100f;">
 <head>
     <title>Groups</title>
-    <link rel="icon" type="image/png" href="favicon.png">
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; background: #11100f; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar Styles */
-        .sidebar { width: 300px; background: #201f1e; border-right: 1px solid #3b3a39; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 20px 15px; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #3b3a39; }
-        .search-area { padding: 15px; position: relative; }
-        input[type="text"] { width: 100%; padding: 10px; background: #11100f; border: 1px solid #484644; color: white; border-radius: 4px; outline: none; }
-        input[type="text"]:focus { border-color: #5b5fc7; }
-        
-        /* Search Results Dropdown */
-        #results { position: absolute; top: 60px; left: 15px; right: 15px; background: #2d2c2c; border: 1px solid #5b5fc7; border-radius: 4px; z-index: 100; max-height: 200px; overflow-y: auto; display: none; }
-        .user-result { padding: 12px; cursor: pointer; border-bottom: 1px solid #3b3a39; font-size: 0.9rem; }
-        .user-result:hover { background: #5b5fc7; }
-
-        /* Main Chat Area */
-        .chat-container { flex: 1; display: flex; flex-direction: column; background: #11100f; }
-        .chat-header { height: 60px; padding: 0 20px; border-bottom: 1px solid #3b3a39; display: flex; align-items: center; justify-content: space-between; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        
-        /* Message Bubbles */
-        .msg { padding: 10px 14px; border-radius: 8px; max-width: 65%; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
-        .sent { align-self: flex-end; background: #5b5fc7; color: white; }
-        .received { align-self: flex-start; background: #3b3a39; color: white; }
-
-        /* Message Input */
-        .chat-footer { padding: 20px; border-top: 1px solid #3b3a39; display: flex; gap: 10px; align-items: center; }
-        #msgInput { flex: 1; }
-        #sendBtn { background: #5b5fc7; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        #sendBtn:disabled { background: #3b3a39; cursor: not-allowed; }
+        body { margin: 0; background: #11100f; color: white; font-family: sans-serif; display: flex; height: 100vh; }
+        .sidebar { width: 300px; border-right: 1px solid #3b3a39; background: #201f1e; display: flex; flex-direction: column; padding: 15px; }
+        input { width: 100%; padding: 10px; background: #11100f; border: 1px solid #3b3a39; color: white; border-radius: 4px; box-sizing: border-box; }
+        #results { margin-top: 10px; background: #2d2c2c; border-radius: 4px; overflow: hidden; }
+        .user-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #3b3a39; }
+        .user-item:hover { background: #5b5fc7; }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px; border-radius: 6px; max-width: 70%; background: #3b3a39; }
+        .sent { align-self: flex-end; background: #5b5fc7; }
+        .input-area { padding: 20px; border-top: 1px solid #3b3a39; display: flex; gap: 10px; }
+        button { background: #5b5fc7; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <div class="sidebar-header">Chat</div>
-    <div class="search-area">
-        <input type="text" id="userSearch" placeholder="Search by email...">
+    <div class="sidebar">
+        <input type="text" id="search" placeholder="Search email...">
         <div id="results"></div>
     </div>
-</div>
-
-<div class="chat-container">
-    <div class="chat-header">
-        <span id="chatTitle">Select a contact to start</span>
+    <div class="main">
+        <div id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Select a user to chat..." disabled>
+            <button id="sendBtn" disabled>Send</button>
+        </div>
     </div>
-    <div id="messages"></div>
-    <div class="chat-footer">
-        <input type="text" id="msgInput" placeholder="Type a message..." disabled>
-        <button id="sendBtn" disabled>Send</button>
-    </div>
-</div>
 
-<script type="module" src="main.js">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, get, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, get, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
-        authDomain: "groups-85638.firebaseapp.com",
-        databaseURL: "https://groups-85638-default-rtdb.asia-southeast1.firebasedatabase.app/",
-        projectId: "groups-85638",
-        appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
-    };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
+            authDomain: "groups-85638.firebaseapp.com",
+            databaseURL: "https://groups-85638-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "groups-85638",
+            appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
+        };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-    let activeChatEmail = null;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        let activeTarget = null;
 
-    onAuthStateChanged(auth, user => { if (!user) window.location.href = "index.html"; });
+        onAuthStateChanged(auth, u => { if(!u) window.location.href="index.html"; });
 
-    // Search Logic
-    document.getElementById('userSearch').addEventListener('input', async (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        const resDiv = document.getElementById('results');
-        resDiv.innerHTML = "";
-        
-        if (query.length < 3) { resDiv.style.display = "none"; return; }
+        document.getElementById('search').oninput = async (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const resDiv = document.getElementById('results');
+            resDiv.innerHTML = "";
+            if(query.length < 3) return;
 
-        const snap = await get(ref(db, 'users'));
-        if (snap.exists()) {
-            let found = false;
-            Object.values(snap.val()).forEach(u => {
-                if (u.email.toLowerCase().includes(query) && u.email !== auth.currentUser.email) {
-                    found = true;
-                    const d = document.createElement('div');
-                    d.className = "user-result";
-                    d.innerText = u.email;
-                    d.onclick = () => {
-                        openChat(u.email);
-                        resDiv.style.display = "none";
-                        e.target.value = "";
-                    };
-                    resDiv.appendChild(d);
+            const snap = await get(ref(db, 'users'));
+            if(snap.exists()){
+                Object.values(snap.val()).forEach(user => {
+                    if(user.email.includes(query) && user.email !== auth.currentUser.email){
+                        const d = document.createElement('div');
+                        d.className = "user-item";
+                        d.innerText = user.email;
+                        d.onclick = () => {
+                            activeTarget = user.email;
+                            document.getElementById('msgInput').disabled = false;
+                            document.getElementById('sendBtn').disabled = false;
+                            loadMessages(user.email);
+                        };
+                        resDiv.appendChild(d);
+                    }
+                });
+            }
+        };
+
+        function loadMessages(email) {
+            const chatID = [auth.currentUser.email, email].sort().map(x => x.replace(/\./g, '_')).join('--');
+            onValue(ref(db, 'chats/' + chatID), snap => {
+                const mBox = document.getElementById('messages');
+                mBox.innerHTML = "";
+                if(snap.exists()){
+                    Object.values(snap.val()).forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = "msg " + (m.sender === auth.currentUser.email ? "sent" : "");
+                        div.innerText = m.text;
+                        mBox.appendChild(div);
+                    });
+                    mBox.scrollTop = mBox.scrollHeight;
                 }
             });
-            resDiv.style.display = found ? "block" : "none";
         }
-    });
 
-    function openChat(email) {
-        activeChatEmail = email;
-        document.getElementById('chatTitle').innerText = email;
-        document.getElementById('msgInput').disabled = false;
-        document.getElementById('sendBtn').disabled = false;
-        document.getElementById('msgInput').focus();
-
-        const chatID = [auth.currentUser.email, email].sort().map(x => x.replace(/\./g, '_')).join('--');
-        onValue(ref(db, 'chats/' + chatID), snap => {
-            const mBox = document.getElementById('messages');
-            mBox.innerHTML = "";
-            if (snap.exists()) {
-                Object.values(snap.val()).forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = "msg " + (m.sender === auth.currentUser.email ? "sent" : "received");
-                    div.innerText = m.text;
-                    mBox.appendChild(div);
-                });
-                mBox.scrollTop = mBox.scrollHeight;
-            }
-        });
-    }
-
-    document.getElementById('sendBtn').onclick = () => {
-        const text = document.getElementById('msgInput').value;
-        if (!text || !activeChatEmail) return;
-
-        const chatID = [auth.currentUser.email, activeChatEmail].sort().map(x => x.replace(/\./g, '_')).join('--');
-        push(ref(db, 'chats/' + chatID), {
-            sender: auth.currentUser.email,
-            text: text,
-            timestamp: serverTimestamp()
-        });
-        document.getElementById('msgInput').value = "";
-    };
-</script>
+        document.getElementById('sendBtn').onclick = () => {
+            const val = document.getElementById('msgInput').value;
+            if(!val || !activeTarget) return;
+            const chatID = [auth.currentUser.email, activeTarget].sort().map(x => x.replace(/\./g, '_')).join('--');
+            push(ref(db, 'chats/' + chatID), {
+                sender: auth.currentUser.email,
+                text: val,
+                timestamp: serverTimestamp()
+            });
+            document.getElementById('msgInput').value = "";
+        };
+    </script>
 </body>
 </html>
