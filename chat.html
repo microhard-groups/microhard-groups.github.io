@@ -3,61 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groups | Chat</title>
+    <title>Groups | Teams Edition</title>
     <style>
-        :root { --primary: #0084ff; --bg: #0f172a; }
-        body { 
-            margin: 0; background: var(--bg); color: white; 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            display: flex; height: 100vh; overflow: hidden;
-        }
-        .main-chat { flex: 1; display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; width: 100%; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); }
+        :root { --primary: #5b5fc7; --bg: #11100f; --sidebar: #201f1e; --border: #3b3a39; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', system-ui, sans-serif; display: flex; height: 100vh; }
         
-        #messages { 
-            flex: 1; padding: 20px; overflow-y: auto; 
-            display: flex; flex-direction: column; gap: 12px;
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
-        }
+        /* Sidebar */
+        .sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .search-contact { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: #2d2c2c; color: white; box-sizing: border-box; }
+        .contact-list { flex: 1; overflow-y: auto; }
+        .contact-item { padding: 15px 20px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #2d2c2c; }
+        .contact-item:hover { background: #2d2c2c; }
+        .contact-item.active { border-left: 4px solid var(--primary); background: #2d2c2c; }
 
-        .msg { 
-            max-width: 70%; padding: 12px 16px; border-radius: 18px; 
-            background: #334155; align-self: flex-start;
-            font-size: 0.95rem; line-height: 1.4;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        }
-
-        .input-area { padding: 20px; display: flex; gap: 12px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); }
+        /* Main Chat */
+        .main-container { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px 25px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         
-        input { 
-            flex: 1; padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05); color: white; outline: none; font-size: 1rem;
-        }
-        
-        input:focus { border-color: var(--primary); }
+        /* Bubbles */
+        .msg { max-width: 60%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; position: relative; }
+        .msg.sent { background: var(--primary); align-self: flex-end; color: white; }
+        .msg.received { background: #3b3a39; align-self: flex-start; }
+        .msg-info { font-size: 0.7rem; opacity: 0.7; margin-bottom: 4px; }
 
-        button { 
-            padding: 0 24px; background: var(--primary); border: none; 
-            border-radius: 12px; color: white; font-weight: 700; cursor: pointer;
-            transition: transform 0.1s;
-        }
-        button:active { transform: scale(0.95); }
+        /* Input Area */
+        .input-area { padding: 20px; background: var(--bg); display: flex; gap: 10px; border-top: 1px solid var(--border); }
+        input#message-input { flex: 1; padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: #2d2c2c; color: white; outline: none; }
+        button#send-btn { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+
+        /* Settings Modal (Hidden by default) */
+        #settings-panel { position: fixed; right: -300px; top: 0; width: 300px; height: 100%; background: var(--sidebar); border-left: 1px solid var(--border); transition: 0.3s; padding: 20px; box-sizing: border-box; z-index: 100; }
+        #settings-panel.open { right: 0; }
     </style>
 </head>
 <body>
 
-    <div class="main-chat">
-        <div id="messages">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>Chat</h3>
+            <input type="text" id="contact-search" class="search-contact" placeholder="Find by email...">
+        </div>
+        <div class="contact-list" id="contact-list">
             </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chat-header">
+            <h4 id="current-chat-name">Select a contact</h4>
+            <button onclick="toggleSettings()" style="background:none; border:none; color:white; cursor:pointer;">⚙️</button>
+        </div>
+        
+        <div id="messages"></div>
 
         <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+            <input type="text" id="message-input" placeholder="Type a message...">
             <button id="send-btn">Send</button>
         </div>
     </div>
 
+    <div id="settings-panel">
+        <h3>Settings</h3>
+        <hr style="border-color: var(--border)">
+        <p>User: <span id="user-email-display">Loading...</span></p>
+        <button onclick="logout()" style="width:100%; padding:10px; background:#d83b01; color:white; border:none; border-radius:4px; cursor:pointer;">Sign Out</button>
+        <br><br>
+        <button onclick="toggleSettings()" style="width:100%; padding:10px; background:var(--border); color:white; border:none; border-radius:4px; cursor:pointer;">Close</button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
@@ -70,41 +88,90 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getDatabase(app);
 
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const messagesDiv = document.getElementById('messages');
+        let currentUser = null;
+        let activeChatEmail = null;
 
-        sendBtn.addEventListener('click', () => {
-            const msgText = messageInput.value;
-            if (msgText.trim() !== "") {
-                push(ref(db, 'messages'), {
-                    text: msgText,
-                    timestamp: Date.now()
-                });
-                messageInput.value = "";
+        // 1. Monitor Auth State
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-email-display').innerText = user.email;
+            } else {
+                window.location.href = "index.html";
             }
         });
 
-        // Enter key to send
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendBtn.click();
-        });
-
-        onValue(ref(db, 'messages'), (snapshot) => {
-            messagesDiv.innerHTML = "";
-            const data = snapshot.val();
-            if (data) {
-                Object.values(data).forEach(msg => {
-                    const div = document.createElement('div');
-                    div.className = 'msg';
-                    div.innerText = msg.text;
-                    messagesDiv.appendChild(div);
-                });
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // 2. Search/Start Chat
+        const contactSearch = document.getElementById('contact-search');
+        contactSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const targetEmail = contactSearch.value.trim().replace(/\./g, '_'); // Fix for Firebase keys
+                if (targetEmail && targetEmail !== currentUser.email.replace(/\./g, '_')) {
+                    startChat(contactSearch.value.trim());
+                    contactSearch.value = "";
+                }
             }
         });
+
+        function startChat(email) {
+            activeChatEmail = email;
+            document.getElementById('current-chat-name').innerText = email;
+            loadMessages(email);
+            
+            // Add to sidebar if not exists
+            const list = document.getElementById('contact-list');
+            if (!document.getElementById(`chat-${email}`)) {
+                const item = document.createElement('div');
+                item.className = 'contact-item';
+                item.id = `chat-${email}`;
+                item.innerText = email;
+                item.onclick = () => startChat(email);
+                list.prepend(item);
+            }
+        }
+
+        // 3. Load Chat History
+        function loadMessages(otherEmail) {
+            const chatID = [currentUser.email, otherEmail].sort().join('_').replace(/\./g, '_');
+            const chatRef = ref(db, 'chats/' + chatID);
+            
+            onValue(chatRef, (snapshot) => {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = "";
+                const data = snapshot.val();
+                if (data) {
+                    Object.values(data).forEach(m => {
+                        const div = document.createElement('div');
+                        const isMe = m.sender === currentUser.email;
+                        div.className = `msg ${isMe ? 'sent' : 'received'}`;
+                        div.innerHTML = `<div class="msg-info">${m.sender}</div>${m.text}`;
+                        messagesDiv.appendChild(div);
+                    });
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
+            });
+        }
+
+        // 4. Send Message
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const text = document.getElementById('message-input').value;
+            if (text && activeChatEmail) {
+                const chatID = [currentUser.email, activeChatEmail].sort().join('_').replace(/\./g, '_');
+                push(ref(db, 'chats/' + chatID), {
+                    sender: currentUser.email,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+                document.getElementById('message-input').value = "";
+            }
+        });
+
+        // Global functions for buttons
+        window.toggleSettings = () => document.getElementById('settings-panel').classList.toggle('open');
+        window.logout = () => signOut(auth);
     </script>
 </body>
 </html>
