@@ -1,12 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-// Added Database imports
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
     authDomain: "groups-85638.firebaseapp.com",
-    databaseURL: "https://groups-85638-default-rtdb.firebaseio.com/",
+    // FIXED: Using your actual Singapore Database URL
+    databaseURL: "https://groups-85638-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "groups-85638",
     storageBucket: "groups-85638.appspot.com",
     messagingSenderId: "751289139753",
@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getDatabase(app); // Initialize Database
+const db = getDatabase(app);
 
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
@@ -26,64 +26,42 @@ const authTitle = document.getElementById('auth-title');
 
 let isLoginMode = false;
 
-// 1. Toggle between Login and Signup
 toggleLink.addEventListener('click', (e) => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
-    
-    if (isLoginMode) {
-        authTitle.innerText = "Welcome Back";
-        authBtn.innerText = "Log In";
-        toggleLink.innerText = "Sign Up";
-        document.getElementById('toggle-text').innerText = "New here?";
-    } else {
-        authTitle.innerText = "Groups";
-        authBtn.innerText = "Create Account";
-        toggleLink.innerText = "Log In";
-        document.getElementById('toggle-text').innerText = "Already have an account?";
-    }
+    authTitle.innerText = isLoginMode ? "Welcome Back" : "Groups";
+    authBtn.innerText = isLoginMode ? "Log In" : "Create Account";
+    toggleLink.innerText = isLoginMode ? "Sign Up" : "Log In";
 });
 
-// 2. Handle Auth & User Registration
 authBtn.addEventListener('click', () => {
     const email = emailInput.value;
     const password = passwordInput.value;
 
     if (!email || !password) {
-        statusMsg.innerText = "Fill it all in, mate.";
+        statusMsg.innerText = "Please fill in all fields.";
         return;
     }
 
     authBtn.disabled = true;
-    authBtn.innerText = isLoginMode ? "Logging in..." : "Joining...";
+    const authFunction = isLoginMode ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
 
-    if (isLoginMode) {
-        // LOGIN LOGIC
-        signInWithEmailAndPassword(auth, email, password)
-            .then(() => {
-                window.location.href = "chat.html";
-            })
-            .catch((error) => handleAuthError(error));
-    } else {
-        // SIGNUP LOGIC
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                // SAVE USER TO DATABASE so they can be searched later
-                const userId = userCredential.user.uid;
-                set(ref(db, 'users/' + userId), {
+    authFunction(auth, email, password)
+        .then((userCredential) => {
+            if (!isLoginMode) {
+                // Save user to database so they are searchable
+                set(ref(db, 'users/' + userCredential.user.uid), {
                     email: email,
-                    uid: userId
+                    uid: userCredential.user.uid
                 }).then(() => {
                     window.location.href = "chat.html";
                 });
-            })
-            .catch((error) => handleAuthError(error));
-    }
+            } else {
+                window.location.href = "chat.html";
+            }
+        })
+        .catch((error) => {
+            authBtn.disabled = false;
+            statusMsg.innerText = error.message;
+        });
 });
-
-function handleAuthError(error) {
-    authBtn.disabled = false;
-    authBtn.innerText = isLoginMode ? "Log In" : "Create Account";
-    statusMsg.style.color = "#f87171";
-    statusMsg.innerText = error.message;
-}

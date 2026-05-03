@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Groups</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
@@ -10,100 +9,73 @@
             --primary: #5b5fc7; --bg: #11100f; --sidebar: #201f1e; 
             --border: #3b3a39; --text: #ffffff; --hover: #2d2c2c;
         }
-
         .light-mode {
             --bg: #f5f5f5; --sidebar: #ffffff; --border: #edebe9; 
             --text: #242424; --hover: #f0f0f0;
         }
-
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; }
-
-        /* Sidebar & Search */
-        .sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
-        .search-container { padding: 16px; position: relative; }
-        .search-input { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; outline: none; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; }
         
-        #search-results { 
-            position: absolute; top: 60px; left: 16px; right: 16px; 
+        .sidebar { width: 300px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .search-area { padding: 15px; position: relative; }
+        .search-input { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); box-sizing: border-box; }
+        
+        #search-dropdown { 
+            position: absolute; top: 55px; left: 15px; right: 15px; 
             background: var(--sidebar); border: 1px solid var(--primary); 
-            border-radius: 4px; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border-radius: 4px; z-index: 10; display: none; 
         }
-        .search-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
+        .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); }
         .search-item:hover { background: var(--primary); color: white; }
 
-        /* Chat Layout */
-        .main-container { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { height: 60px; padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 70%; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
+        .sent { background: var(--primary); align-self: flex-end; color: white; }
+        .received { background: var(--border); align-self: flex-start; }
 
-        /* Bubbles */
-        .msg { max-width: 65%; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; }
-        .msg.sent { background: var(--primary); align-self: flex-end; color: white; }
-        .msg.received { background: var(--border); align-self: flex-start; color: var(--text); }
-
-        /* Input Area */
-        .input-area { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; background: var(--bg); }
-        .input-area.disabled { opacity: 0.3; pointer-events: none; }
-        #message-input { flex: 1; padding: 12px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 6px; color: var(--text); outline: none; }
-        #send-btn { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-weight: 600; }
-
-        /* Settings Panel */
-        #settings-panel { 
-            position: fixed; right: -350px; top: 0; width: 350px; height: 100%; 
-            background: var(--sidebar); border-left: 1px solid var(--border); 
-            transition: 0.3s ease; padding: 24px; box-sizing: border-box; z-index: 2000; 
-        }
-        #settings-panel.open { right: 0; }
-        .settings-option { background: var(--hover); padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-danger { background: #c43131; color: white; border: none; padding: 12px; border-radius: 4px; width: 100%; cursor: pointer; margin-top: 20px; font-weight: bold; }
+        .footer { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        .footer.locked { opacity: 0.3; pointer-events: none; }
+        #msg-input { flex: 1; padding: 10px; background: var(--sidebar); border: 1px solid var(--border); color: var(--text); border-radius: 4px; }
+        
+        #settings-menu { position: fixed; right: -320px; top: 0; width: 300px; height: 100%; background: var(--sidebar); border-left: 1px solid var(--border); transition: 0.3s; padding: 20px; z-index: 100; }
+        #settings-menu.open { right: 0; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="search-container">
-            <input type="text" id="contact-search" class="search-input" placeholder="Search by email...">
-            <div id="search-results"></div>
+        <div class="search-area">
+            <input type="text" id="user-search" class="search-input" placeholder="Find people...">
+            <div id="search-dropdown"></div>
         </div>
-        <div id="recent-chats" class="contact-list"></div>
+        <div id="contact-list"></div>
     </div>
 
-    <div class="main-container">
-        <div class="chat-header">
-            <strong id="current-chat-name">Select a contact</strong>
-            <button onclick="toggleSettings()" style="background:none; border:none; color:var(--text); cursor:pointer; font-size: 1.2rem;">⚙️</button>
+    <div class="main">
+        <div class="header">
+            <strong id="chat-title">Select a contact</strong>
+            <button onclick="document.getElementById('settings-menu').classList.toggle('open')" style="background:none; border:none; cursor:pointer; color:var(--text); font-size:1.2rem;">⚙️</button>
         </div>
         <div id="messages"></div>
-        <div class="input-area disabled" id="chat-controls">
-            <input type="text" id="message-input" placeholder="Start typing...">
-            <button id="send-btn">Send</button>
+        <div class="footer locked" id="chat-footer">
+            <input type="text" id="msg-input" placeholder="Type a message...">
+            <button id="send-btn" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Send</button>
         </div>
     </div>
 
-    <div id="settings-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2>Settings</h2>
-            <button onclick="toggleSettings()" style="background:none; border:none; color:var(--text); cursor:pointer;">✕</button>
-        </div>
-        
-        <div class="settings-option">
+    <div id="settings-menu">
+        <h3>Settings</h3>
+        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
             <span>Dark Mode</span>
             <input type="checkbox" id="dark-mode-toggle" checked>
         </div>
-        <div class="settings-option">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
             <span>Notifications</span>
             <input type="checkbox" checked>
         </div>
-        <div class="settings-option">
-            <span>Read Receipts</span>
-            <input type="checkbox" checked>
-        </div>
-
-        <div style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px;">
-            <p style="font-size: 0.8rem; color: #adadad;">Account</p>
-            <p id="user-email-display" style="font-weight: bold; margin-bottom: 20px;"></p>
-            <button class="btn-danger" onclick="logout()">Sign Out</button>
-        </div>
+        <button onclick="auth.signOut()" style="width:100%; padding:10px; background:#c43131; color:white; border:none; border-radius:4px; margin-top:20px; cursor:pointer;">Sign Out</button>
     </div>
 
     <script type="module">
@@ -114,7 +86,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
             authDomain: "groups-85638.firebaseapp.com",
-            databaseURL: "https://groups-85638-default-rtdb.firebaseio.com/",
+            databaseURL: "https://groups-85638-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "groups-85638",
             storageBucket: "groups-85638.appspot.com",
             messagingSenderId: "751289139753",
@@ -122,109 +94,92 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        window.auth = getAuth(app);
         const db = getDatabase(app);
 
         let currentUser = null;
-        let activeChatEmail = null;
+        let activeTarget = null;
 
-        // Dark Mode Logic
-        const modeToggle = document.getElementById('dark-mode-toggle');
-        modeToggle.addEventListener('change', () => {
-            document.body.classList.toggle('light-mode', !modeToggle.checked);
+        // Dark Mode
+        document.getElementById('dark-mode-toggle').addEventListener('change', (e) => {
+            document.body.classList.toggle('light-mode', !e.target.checked);
         });
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('user-email-display').innerText = user.email;
-            } else {
-                window.location.href = "index.html";
-            }
+            if (user) currentUser = user;
+            else window.location.href = "index.html";
         });
 
         // Search Logic
-        const searchInput = document.getElementById('contact-search');
-        const resultsDiv = document.getElementById('search-results');
+        const searchInput = document.getElementById('user-search');
+        const dropdown = document.getElementById('search-dropdown');
 
         searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase().trim();
-            if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
+            const val = searchInput.value.toLowerCase().trim();
+            dropdown.innerHTML = "";
+            if (val.length < 2) { dropdown.style.display = 'none'; return; }
 
-            get(ref(db, 'users')).then((snapshot) => {
-                if (snapshot.exists()) {
-                    resultsDiv.innerHTML = "";
-                    let found = false;
-                    Object.values(snapshot.val()).forEach(user => {
-                        if (user.email.toLowerCase().includes(query) && user.email !== currentUser.email) {
-                            found = true;
-                            const item = document.createElement('div');
-                            item.className = 'search-item';
-                            item.innerText = user.email;
-                            item.onclick = () => {
-                                startChat(user.email);
-                                resultsDiv.style.display = 'none';
+            get(ref(db, 'users')).then((snap) => {
+                if (snap.exists()) {
+                    let matches = 0;
+                    Object.values(snap.val()).forEach(u => {
+                        if (u.email.includes(val) && u.email !== currentUser.email) {
+                            matches++;
+                            const div = document.createElement('div');
+                            div.className = 'search-item';
+                            div.innerText = u.email;
+                            div.onclick = () => {
+                                startChat(u.email);
+                                dropdown.style.display = 'none';
                                 searchInput.value = "";
                             };
-                            resultsDiv.appendChild(item);
+                            dropdown.appendChild(div);
                         }
                     });
-                    resultsDiv.style.display = found ? 'block' : 'none';
+                    dropdown.style.display = matches > 0 ? 'block' : 'none';
                 }
             });
         });
 
         function startChat(email) {
-            activeChatEmail = email;
-            document.getElementById('current-chat-name').innerText = email;
-            document.getElementById('chat-controls').classList.remove('disabled');
+            activeTarget = email;
+            document.getElementById('chat-title').innerText = email;
+            document.getElementById('chat-footer').classList.remove('locked');
 
-            // Sanitize IDs for Firebase (dots not allowed)
             const myId = currentUser.email.replace(/\./g, '_');
             const theirId = email.replace(/\./g, '_');
             const chatID = [myId, theirId].sort().join('--');
 
             onValue(ref(db, 'chats/' + chatID), (snap) => {
-                const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML = "";
-                const data = snap.val();
-                if (data) {
-                    Object.values(data).forEach(m => {
+                const msgBox = document.getElementById('messages');
+                msgBox.innerHTML = "";
+                if (snap.exists()) {
+                    Object.values(snap.val()).forEach(m => {
                         const d = document.createElement('div');
                         d.className = `msg ${m.sender === currentUser.email ? 'sent' : 'received'}`;
                         d.innerText = m.text;
-                        msgDiv.appendChild(d);
+                        msgBox.appendChild(d);
                     });
-                    msgDiv.scrollTop = msgDiv.scrollHeight;
+                    msgBox.scrollTop = msgBox.scrollHeight;
                 }
             });
         }
 
-        document.getElementById('send-btn').addEventListener('click', sendMessage);
-        document.getElementById('message-input').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') sendMessage();
-        });
-
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (text && activeChatEmail) {
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const input = document.getElementById('msg-input');
+            if (input.value.trim() && activeTarget) {
                 const myId = currentUser.email.replace(/\./g, '_');
-                const theirId = activeChatEmail.replace(/\./g, '_');
+                const theirId = activeTarget.replace(/\./g, '_');
                 const chatID = [myId, theirId].sort().join('--');
 
                 push(ref(db, 'chats/' + chatID), {
                     sender: currentUser.email,
-                    text: text,
+                    text: input.value,
                     timestamp: serverTimestamp()
-                }).then(() => {
-                    input.value = "";
-                }).catch(err => alert("Error: " + err.message));
+                });
+                input.value = "";
             }
-        }
-
-        window.toggleSettings = () => document.getElementById('settings-panel').classList.toggle('open');
-        window.logout = () => signOut(auth);
+        });
     </script>
 </body>
 </html>
