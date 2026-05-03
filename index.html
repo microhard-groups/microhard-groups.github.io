@@ -128,21 +128,26 @@
     <div class="blob" style="bottom: 10%; right: 10%; background: #7c3aed;"></div>
 
     <div class="auth-container">
-        <h2>Groups</h2>
-        <p class="subtitle">Enter your details to join the conversation.</p>
-        
-        <div class="input-group">
-            <input type="email" id="email" placeholder="Email Address" spellcheck="false">
-        </div>
-        
-        <div class="input-group">
-            <input type="password" id="password" placeholder="Password">
-        </div>
-
-        <button id="signup-btn">Create Account</button>
-        
-        <p id="status-message"></p>
+    <h2 id="auth-title">Groups</h2>
+    <p class="subtitle" id="auth-subtitle">Enter your details to join the conversation.</p>
+    
+    <div class="input-group">
+        <input type="email" id="email" placeholder="Email Address" spellcheck="false">
     </div>
+    
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password">
+    </div>
+
+    <button id="auth-btn">Create Account</button>
+    
+    <p id="status-message"></p>
+
+    <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 20px;">
+        <span id="toggle-text">Already have an account?</span> 
+        <a href="#" id="toggle-link" style="color: #0084ff; text-decoration: none; font-weight: 600;">Log In</a>
+    </p>
+</div>
 
     <script type="module" src="main.js"></script>
 </body>

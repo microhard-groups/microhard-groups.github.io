@@ -1,14 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// REPLACE THESE WITH YOUR KEYS FROM FIREBASE SETTINGS
 const firebaseConfig = {
-  apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
-  authDomain: "groups-85638.firebaseapp.com",
-  projectId: "groups-85638",
-  storageBucket: "groups-85638.appspot.com",
-  messagingSenderId: "751289139753",
-  appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
+    apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo", // Make sure this is your real key!
+    authDomain: "groups-85638.firebaseapp.com",
+    projectId: "groups-85638",
+    storageBucket: "groups-85638.appspot.com",
+    messagingSenderId: "751289139753",
+    appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -16,34 +15,54 @@ const auth = getAuth(app);
 
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
-const signUpBtn = document.getElementById('signup-btn');
+const authBtn = document.getElementById('auth-btn');
 const statusMsg = document.getElementById('status-message');
+const toggleLink = document.getElementById('toggle-link');
+const authTitle = document.getElementById('auth-title');
 
-signUpBtn.addEventListener('click', () => {
+let isLoginMode = false;
+
+// 1. Toggle between Login and Signup
+toggleLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    
+    if (isLoginMode) {
+        authTitle.innerText = "Welcome Back";
+        authBtn.innerText = "Log In";
+        toggleLink.innerText = "Sign Up";
+        document.getElementById('toggle-text').innerText = "New here?";
+    } else {
+        authTitle.innerText = "Groups";
+        authBtn.innerText = "Create Account";
+        toggleLink.innerText = "Log In";
+        document.getElementById('toggle-text').innerText = "Already have an account?";
+    }
+});
+
+// 2. Handle the actual Auth
+authBtn.addEventListener('click', () => {
     const email = emailInput.value;
     const password = passwordInput.value;
 
     if (!email || !password) {
-        statusMsg.style.color = "#fbbf24";
-        statusMsg.innerText = "Enter your details, please.";
+        statusMsg.innerText = "Fill it all in, mate.";
         return;
     }
 
-    signUpBtn.innerText = "Joining...";
-    signUpBtn.disabled = true;
+    authBtn.disabled = true;
+    authBtn.innerText = isLoginMode ? "Logging in..." : "Joining...";
 
-    createUserWithEmailAndPassword(auth, email, password)
-.then((userCredential) => {
-            statusMsg.style.color = "#4ade80";
-            statusMsg.innerText = "Success! Account created.";
-            console.log("Success:", userCredential.user);
-            
-            // This is the "teleport" command
-            window.location.href = "chat.html"; 
+    // Determine which Firebase function to use
+    const authFunction = isLoginMode ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
+
+    authFunction(auth, email, password)
+        .then(() => {
+            window.location.href = "chat.html";
         })
         .catch((error) => {
-            signUpBtn.innerText = "Create Account";
-            signUpBtn.disabled = false;
+            authBtn.disabled = false;
+            authBtn.innerText = isLoginMode ? "Log In" : "Create Account";
             statusMsg.style.color = "#f87171";
             statusMsg.innerText = error.message;
         });
