@@ -1,4 +1,132 @@
-<link rel="icon" type="image/png" href="favicon.png">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groups | Teams Edition</title>
+    <style>
+        :root { 
+            --primary: #5b5fc7; /* Teams Purple */
+            --bg: #11100f; 
+            --sidebar: #201f1e; 
+            --border: #3b3a39; 
+            --hover: #2d2c2c;
+            --text-secondary: #adadad;
+        }
+
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar & Search */
+        .sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
+        .sidebar-header { padding: 16px; }
+        .search-container { position: relative; }
+        .search-input { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border); background: #2d2c2c; color: white; outline: none; }
+        
+        /* SEARCH DROPDOWN */
+        #search-results { 
+            position: absolute; top: 100%; left: 0; right: 0; 
+            background: #2d2c2c; border: 1px solid var(--border); 
+            border-radius: 4px; z-index: 1000; display: none;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+        }
+        .search-item { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .search-item:hover { background: var(--primary); }
+        .avatar-circle { width: 30px; height: 30px; background: #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
+
+        /* Contact List */
+        .contact-list { flex: 1; overflow-y: auto; }
+        .contact-item { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+        .contact-item:hover { background: var(--hover); }
+        .contact-item.active { background: var(--hover); border-left: 3px solid var(--primary); }
+
+        /* Main Chat */
+        .main-container { flex: 1; display: flex; flex-direction: column; }
+        .chat-header { height: 60px; padding: 0 20px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+        /* Message Bubbles */
+        .msg { max-width: 65%; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; position: relative; }
+        .msg.sent { background: var(--primary); align-self: flex-end; }
+        .msg.received { background: #3b3a39; align-self: flex-start; }
+        .msg-sender { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+
+        /* Input area */
+        .input-area { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+        #message-input { flex: 1; padding: 12px; background: #2d2c2c; border: 1px solid var(--border); border-radius: 6px; color: white; outline: none; }
+        #send-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+
+        /* SETTINGS PANEL (Teams Themed) */
+        #settings-panel { 
+            position: fixed; right: -350px; top: 0; width: 350px; height: 100%; 
+            background: var(--sidebar); border-left: 1px solid var(--border); 
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 24px; box-sizing: border-box; z-index: 2000;
+        }
+        #settings-panel.open { right: 0; }
+        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .settings-option { background: var(--hover); padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        .btn-danger { background: #c43131; color: white; border: none; padding: 12px; border-radius: 4px; width: 100%; cursor: pointer; margin-top: 20px; }
+
+        /* Icon Button */
+        .icon-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 8px; border-radius: 4px; }
+        .icon-btn:hover { background: var(--hover); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 style="font-size: 1.2rem; margin-bottom: 15px;">Chat</h2>
+            <div class="search-container">
+                <input type="text" id="contact-search" class="search-input" placeholder="Start a new chat...">
+                <div id="search-results"></div>
+            </div>
+        </div>
+        <div class="contact-list" id="recent-chats">
+            </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chat-header">
+            <div>
+                <strong id="current-chat-name">Select a contact to message</strong>
+            </div>
+            <button class="icon-btn" onclick="toggleSettings()">⚙️</button>
+        </div>
+        
+        <div id="messages"></div>
+
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Type a message...">
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <div id="settings-panel">
+        <div class="settings-header">
+            <h2>Settings</h2>
+            <button class="icon-btn" onclick="toggleSettings()">✕</button>
+        </div>
+        
+        <div class="settings-option">
+            <span>Dark Mode</span>
+            <input type="checkbox" checked disabled>
+        </div>
+        <div class="settings-option">
+            <span>Desktop Notifications</span>
+            <input type="checkbox">
+        </div>
+        <div class="settings-option">
+            <span>Read Receipts</span>
+            <input type="checkbox" checked>
+        </div>
+
+        <div style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <p style="color: var(--text-secondary); font-size: 0.8rem;">Signed in as:</p>
+            <p id="user-email-display" style="font-weight: bold;"></p>
+            <button class="btn-danger" onclick="logout()">Sign Out</button>
+        </div>
+    </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -86,3 +214,5 @@
     window.toggleSettings = () => document.getElementById('settings-panel').classList.toggle('open');
     window.logout = () => signOut(auth);
 </script>
+</body>
+</html>
