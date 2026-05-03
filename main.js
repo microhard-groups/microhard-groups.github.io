@@ -1,9 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// Added Database imports
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo", // Make sure this is your real key!
+    apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
     authDomain: "groups-85638.firebaseapp.com",
+    databaseURL: "https://groups-85638-default-rtdb.firebaseio.com/",
     projectId: "groups-85638",
     storageBucket: "groups-85638.appspot.com",
     messagingSenderId: "751289139753",
@@ -12,6 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app); // Initialize Database
 
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
@@ -40,7 +44,7 @@ toggleLink.addEventListener('click', (e) => {
     }
 });
 
-// 2. Handle the actual Auth
+// 2. Handle Auth & User Registration
 authBtn.addEventListener('click', () => {
     const email = emailInput.value;
     const password = passwordInput.value;
@@ -53,17 +57,33 @@ authBtn.addEventListener('click', () => {
     authBtn.disabled = true;
     authBtn.innerText = isLoginMode ? "Logging in..." : "Joining...";
 
-    // Determine which Firebase function to use
-    const authFunction = isLoginMode ? signInWithEmailAndPassword : createUserWithEmailAndPassword;
-
-    authFunction(auth, email, password)
-        .then(() => {
-            window.location.href = "chat.html";
-        })
-        .catch((error) => {
-            authBtn.disabled = false;
-            authBtn.innerText = isLoginMode ? "Log In" : "Create Account";
-            statusMsg.style.color = "#f87171";
-            statusMsg.innerText = error.message;
-        });
+    if (isLoginMode) {
+        // LOGIN LOGIC
+        signInWithEmailAndPassword(auth, email, password)
+            .then(() => {
+                window.location.href = "chat.html";
+            })
+            .catch((error) => handleAuthError(error));
+    } else {
+        // SIGNUP LOGIC
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // SAVE USER TO DATABASE so they can be searched later
+                const userId = userCredential.user.uid;
+                set(ref(db, 'users/' + userId), {
+                    email: email,
+                    uid: userId
+                }).then(() => {
+                    window.location.href = "chat.html";
+                });
+            })
+            .catch((error) => handleAuthError(error));
+    }
 });
+
+function handleAuthError(error) {
+    authBtn.disabled = false;
+    authBtn.innerText = isLoginMode ? "Log In" : "Create Account";
+    statusMsg.style.color = "#f87171";
+    statusMsg.innerText = error.message;
+}
