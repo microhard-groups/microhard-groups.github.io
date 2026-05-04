@@ -11,13 +11,13 @@
         #userSearch { width:100%; padding:10px 14px; background:#11100f; border:1px solid #3b3a39; color:white; border-radius:8px; font-size:0.9rem; }
         #userSearch:focus { outline:none; border-color:#5b5fc7; }
         #userSearch::placeholder { color:#555; }
-        #results { background:#2d2c2c; border-radius:8px; border:1px solid #5b5fc7; display:none; margin-top:6px; overflow:hidden; }
+        #results { background:#2d2c2c; border-radius:8px; border:1px solid #5b5fc7; display:none; margin-top:6px; overflow:hidden; max-height:300px; overflow-y:auto; }
         .user-item { padding:12px 14px; cursor:pointer; border-bottom:1px solid #3b3a39; font-size:0.9rem; }
         .user-item:last-child { border-bottom:none; }
         .user-item:hover { background:#5b5fc7; }
         .no-result { padding:12px 14px; color:#888; font-size:0.85rem; }
         #chatList { margin-top:16px; flex:1; overflow-y:auto; }
-        .chat-entry { padding:10px 12px; border-radius:8px; cursor:pointer; font-size:0.88rem; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .chat-entry { padding:12px 14px; border-radius:8px; cursor:pointer; font-size:0.88rem; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
         .chat-entry:hover { background:#2d2c2c; }
         .chat-entry.active { background:#5b5fc7; color:white; }
         .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -41,6 +41,10 @@
         #logoutBtn:hover { background:#2d2c2c; color:white; }
     </style>
 </head>
+    <!-- Footer Link -->
+    <footer style="position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #64748b; text-align: center; z-index: 100;">
+        <a href="https://group-chats.github.io/tos/terms-of-service.html" style="color: #64748b; text-decoration: none;">Terms of Service</a>
+    </footer>
 <body>
 <div class="sidebar">
     <h3>💬 Groups</h3>
@@ -61,7 +65,7 @@
 <script type="module">
     import { initializeApp } from 'https://esm.sh/firebase/app';
     import { getAuth, onAuthStateChanged, signOut } from 'https://esm.sh/firebase/auth';
-    import { getDatabase, ref, get, push, onValue, serverTimestamp, query, orderByChild } from 'https://esm.sh/firebase/database';
+    import { getDatabase, ref, get, push, onValue, serverTimestamp } from 'https://esm.sh/firebase/database';
 
     const app = initializeApp({
         apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
@@ -80,44 +84,56 @@
 
     onAuthStateChanged(auth, user => {
         if (!user) {
-            window.location.href = 'authenticate.html'; // or index.html
+            window.location.href = 'authenticate.html';
             return;
         }
         currentUser = user;
         document.getElementById('chat-header').textContent = 'Signed in as ' + user.email;
-        loadExistingChats();
+        loadUserChats();
     });
-
-    // ================== CHAT LIST MANAGEMENT ==================
-    async function loadExistingChats() {
-        const list = document.getElementById('chatList');
-        list.innerHTML = '';
-
-        // This is a simple approach: we'll populate chats when someone is searched/opened
-        // You can make it more advanced later
-    }
 
     function getChatID(a, b) {
         return [a, b].sort().map(x => x.replace(/[.#$[\]]/g, '_')).join('--');
     }
 
+    // Load previous chats from sidebar
+    async function loadUserChats() {
+        const list = document.getElementById('chatList');
+        list.innerHTML = '';
+
+        try {
+            const usersSnap = await get(ref(db, 'users'));
+            if (!usersSnap.exists()) return;
+
+            // For simplicity we load all users and check which chats have messages
+            const allUsers = Object.values(usersSnap.val());
+            
+            for (const u of allUsers) {
+                if (u.email === currentUser.email) continue;
+                const chatID = getChatID(currentUser.email, u.email);
+                const chatSnap = await get(ref(db, 'chats/' + chatID));
+                
+                if (chatSnap.exists()) {
+                    addToChatList(u.email);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load chats", e);
+        }
+    }
+
     function addToChatList(email) {
         const list = document.getElementById('chatList');
-        const existing = document.querySelector(`.chat-entry[data-email="${email}"]`);
-        if (existing) {
-            existing.classList.add('active');
-            return;
-        }
+        if (document.querySelector(`.chat-entry[data-email="${email}"]`)) return;
 
         const entry = document.createElement('div');
-        entry.className = 'chat-entry active';
+        entry.className = 'chat-entry';
         entry.setAttribute('data-email', email);
         entry.textContent = email;
         entry.addEventListener('click', () => openChat(email));
         list.prepend(entry);
     }
 
-    // ================== OPEN CHAT ==================
     function openChat(email) {
         activeChat = email;
         document.getElementById('chat-header').textContent = 'Chat with ' + email;
@@ -128,65 +144,52 @@
         document.getElementById('sendBtn').disabled = false;
         msgInput.focus();
 
-        // Highlight in sidebar
         document.querySelectorAll('.chat-entry').forEach(el => el.classList.remove('active'));
-        const entry = document.querySelector(`.chat-entry[data-email="${email}"]`);
-        if (entry) entry.classList.add('active');
+        const activeEntry = document.querySelector(`.chat-entry[data-email="${email}"]`);
+        if (activeEntry) activeEntry.classList.add('active');
 
-        // Clean up previous listener
         if (activeChatUnsub) activeChatUnsub();
 
         const chatID = getChatID(currentUser.email, email);
 
-        activeChatUnsub = onValue(ref(db, 'chats/' + chatID), 
-            (snap) => {
-                const mBox = document.getElementById('messages');
-                mBox.innerHTML = '';
+        activeChatUnsub = onValue(ref(db, 'chats/' + chatID), (snap) => {
+            const mBox = document.getElementById('messages');
+            mBox.innerHTML = '';
 
-                if (!snap.exists()) {
-                    mBox.innerHTML = `<div class="empty-state"><p>No messages yet. Say hi! 👋</p></div>`;
-                    return;
-                }
-
-                const messages = Object.values(snap.val()).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-                messages.forEach(m => {
-                    const isSent = m.sender === currentUser.email;
-                    const wrap = document.createElement('div');
-                    wrap.className = `msg-wrap ${isSent ? 'sent' : 'received'}`;
-
-                    const label = document.createElement('div');
-                    label.className = 'msg-sender';
-                    label.textContent = isSent ? 'You' : m.sender.split('@')[0];
-
-                    const div = document.createElement('div');
-                    div.className = 'msg';
-                    div.textContent = m.text;
-
-                    wrap.appendChild(label);
-                    wrap.appendChild(div);
-                    mBox.appendChild(wrap);
-                });
-
-                mBox.scrollTop = mBox.scrollHeight;
-            },
-            (error) => {
-                console.error("Listener error:", error);
-                document.getElementById('messages').innerHTML = `
-                    <div class="empty-state">
-                        <p style="color:#ff6b6b;">Error loading messages.<br>Check Firebase Rules.</p>
-                    </div>`;
+            if (!snap.exists()) {
+                mBox.innerHTML = `<div class="empty-state"><p>No messages yet. Say hi! 👋</p></div>`;
+                return;
             }
-        );
 
-        addToChatList(email);
+            const messages = Object.values(snap.val())
+                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+            messages.forEach(m => {
+                const isSent = m.sender === currentUser.email;
+                const wrap = document.createElement('div');
+                wrap.className = `msg-wrap ${isSent ? 'sent' : 'received'}`;
+
+                const label = document.createElement('div');
+                label.className = 'msg-sender';
+                label.textContent = isSent ? 'You' : m.sender.split('@')[0];
+
+                const div = document.createElement('div');
+                div.className = 'msg';
+                div.textContent = m.text;
+
+                wrap.appendChild(label);
+                wrap.appendChild(div);
+                mBox.appendChild(wrap);
+            });
+
+            mBox.scrollTop = mBox.scrollHeight;
+        });
     }
 
-    // ================== SEND MESSAGE ==================
     function sendMessage() {
         const input = document.getElementById('msgInput');
         const text = input.value.trim();
-        if (!text || !activeChat || !currentUser) return;
+        if (!text || !activeChat) return;
 
         const chatID = getChatID(currentUser.email, activeChat);
 
@@ -197,10 +200,9 @@
         });
 
         input.value = '';
-        input.focus();
     }
 
-    // ================== SEARCH ==================
+    // Search
     let searchTimeout = null;
     document.getElementById('userSearch').addEventListener('input', e => {
         clearTimeout(searchTimeout);
@@ -209,7 +211,6 @@
 
         if (q.length < 3) {
             resDiv.style.display = 'none';
-            resDiv.innerHTML = '';
             return;
         }
 
@@ -225,12 +226,12 @@
                 }
 
                 const matches = Object.values(snap.val())
-                    .filter(u => u.email && u.email.toLowerCase().includes(q) && u.email !== currentUser.email);
+                    .filter(u => u.email && u.email.toLowerCase().includes(q) && u.email !== currentUser?.email);
 
                 resDiv.innerHTML = '';
 
                 if (matches.length === 0) {
-                    resDiv.innerHTML = '<div class="no-result">No account with that email exists.</div>';
+                    resDiv.innerHTML = '<div class="no-result">No user found with that email.</div>';
                     return;
                 }
 
@@ -242,17 +243,17 @@
                         resDiv.style.display = 'none';
                         document.getElementById('userSearch').value = '';
                         openChat(u.email);
+                        addToChatList(u.email);   // Add to sidebar immediately
                     });
                     resDiv.appendChild(d);
                 });
             } catch (err) {
                 console.error(err);
-                resDiv.innerHTML = '<div class="no-result">Error searching users.</div>';
+                resDiv.innerHTML = '<div class="no-result">Search failed.</div>';
             }
-        }, 300);
+        }, 250);
     });
 
-    // ================== EVENT LISTENERS ==================
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('msgInput').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) {
