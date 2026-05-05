@@ -111,7 +111,7 @@
                     if (!userCred.user.emailVerified) {
                         await auth.signOut();
                         status.className = '';
-                        status.textContent = 'Please verify your email before signing in. Check your inbox.';
+                        status.textContent = 'Please verify your email before signing in. Check your inbox and your spam folder.';
                         btn.disabled = false;
                         btn.textContent = 'Sign In';
                         return;
