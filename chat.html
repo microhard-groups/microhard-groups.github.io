@@ -396,7 +396,7 @@ body {
 ═══════════════════════════════════════════ */
 #settingsPanel {
   position:fixed; inset:0; z-index:800;
-  background:#0f0e0d; display:none; flex-direction:column;
+  background:var(--main-bg); display:none; flex-direction:column;
   animation: settingsIn 0.25s cubic-bezier(.22,1,.36,1);
 }
 #settingsPanel.visible { display:flex; }
@@ -506,29 +506,79 @@ body {
 .color-swatch:hover { transform:scale(1.15); }
 .color-swatch.selected { border-color:white; }
 
-/* Gradient input */
-.gradient-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; }
-.grad-preview { width:40px;height:40px;border-radius:8px;flex-shrink:0; }
-
-/* Notification toggle */
-.toggle-switch { position:relative; width:44px; height:24px; }
-.toggle-switch input { opacity:0; width:0; height:0; }
-.toggle-slider {
-  position:absolute; inset:0; background:#3a3937; border-radius:24px; cursor:pointer;
-  transition:background 0.2s;
+/* Notification / UI sliders */
+.slider-wrap { display:flex; align-items:center; gap:10px; }
+.s-slider {
+  -webkit-appearance:none; appearance:none;
+  width:130px; height:4px; border-radius:4px;
+  background:rgba(255,255,255,0.12); outline:none; cursor:pointer;
 }
-.toggle-slider::before {
-  content:''; position:absolute; width:18px;height:18px;border-radius:50%;
-  background:white; top:3px; left:3px; transition:transform 0.2s;
+.s-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer;
+  box-shadow:0 0 0 3px rgba(91,95,199,0.25);
+  transition:transform 0.1s;
 }
-.toggle-switch input:checked + .toggle-slider { background:var(--accent); }
-.toggle-switch input:checked + .toggle-slider::before { transform:translateX(20px); }
+.s-slider::-webkit-slider-thumb:hover { transform:scale(1.15); }
+.s-slider::-moz-range-thumb {
+  width:16px; height:16px; border-radius:50%;
+  background:var(--accent); cursor:pointer; border:none;
+}
+.slider-val { font-size:0.8rem; color:var(--text-muted); min-width:36px; text-align:right; }
 
-.settings-status { font-size:0.82rem; color:#4ade80; min-height:16px; margin-top:6px; }
+/* Styled select */
+.s-select {
+  -webkit-appearance:none; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;
+  padding-right:30px !important;
+}
 
-/* ═══════════════════════════════════════════
-   CALL MODAL
-═══════════════════════════════════════════ */
+/* Theme grid */
+.theme-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.theme-option {
+  border-radius:10px; cursor:pointer; border:2px solid transparent;
+  transition:border-color 0.15s, transform 0.12s; overflow:hidden;
+  text-align:center; padding-bottom:6px;
+}
+.theme-option:hover { transform:scale(1.04); }
+.theme-option.selected { border-color:var(--accent); }
+.theme-preview { height:52px; width:100%; }
+.theme-option span { font-size:0.7rem; color:rgba(255,255,255,0.6); display:block; margin-top:4px; }
+
+/* Status quick menu */
+.sqm-item {
+  padding:9px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;
+  color:var(--text-dim); display:flex; align-items:center; gap:10px;
+  transition:background 0.1s, color 0.1s;
+}
+.sqm-item:hover { background:rgba(255,255,255,0.06); color:var(--text); }
+.sqm-item.active-status { color:var(--text); }
+
+/* Discord-style emoji picker tabs */
+.ep-tab {
+  flex:1; background:transparent; border:none; cursor:pointer;
+  padding:8px 4px; font-size:1.1rem; opacity:0.5;
+  transition:opacity 0.15s, background 0.15s; border-bottom:2px solid transparent;
+}
+.ep-tab:hover { opacity:0.8; background:rgba(255,255,255,0.05); }
+.ep-tab.active { opacity:1; border-bottom-color:var(--accent); }
+
+/* Emoji grid items */
+.ep-e {
+  font-size:1.35rem; cursor:pointer; padding:5px; border-radius:7px;
+  transition:background 0.1s, transform 0.1s; line-height:1; flex-shrink:0;
+}
+.ep-e:hover { background:rgba(255,255,255,0.1); transform:scale(1.15); }
+
+/* Background custom upload */
+#bgGrid { grid-template-columns: repeat(4,1fr); }
+
+.group-badge {
+  background:rgba(91,95,199,0.25); color:var(--accent); font-size:0.68rem;
+  padding:1px 6px; border-radius:4px; margin-left:4px; vertical-align:middle; font-weight:700;
+}
 #callModal {
   position:fixed; inset:0; z-index:900; background:rgba(0,0,0,0.92);
   display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px;
@@ -643,7 +693,6 @@ body {
 <!-- Intro Animation -->
 <div id="intro-overlay">
   <div class="intro-logo">Groups</div>
-  <div class="intro-tagline">Your conversations</div>
   <div class="intro-dots"><div class="intro-dot"></div><div class="intro-dot"></div><div class="intro-dot"></div></div>
 </div>
 
@@ -722,28 +771,27 @@ body {
   </div>
 
   <div class="footer">
-    <!-- Emoji toolbar row -->
-    <div class="emoji-toolbar" id="emojiToolbar">
-      <span class="et-emoji" data-e="😂">😂</span>
-      <span class="et-emoji" data-e="❤️">❤️</span>
-      <span class="et-emoji" data-e="🔥">🔥</span>
-      <span class="et-emoji" data-e="👍">👍</span>
-      <span class="et-emoji" data-e="😮">😮</span>
-      <span class="et-emoji" data-e="😢">😢</span>
-      <span class="et-emoji" data-e="🎉">🎉</span>
-      <span class="et-emoji" data-e="💀">💀</span>
-      <span class="et-emoji" data-e="🤣">🤣</span>
-      <span class="et-emoji" data-e="😭">😭</span>
-      <span class="et-emoji" data-e="💯">💯</span>
-      <span class="et-emoji" data-e="👀">👀</span>
-      <span class="et-emoji" data-e="🥶">🥶</span>
-      <span class="et-emoji" data-e="😍">😍</span>
-      <span class="et-emoji" data-e="🙏">🙏</span>
-      <span class="et-emoji" data-e="😎">😎</span>
-      <span class="et-emoji" data-e="🤔">🤔</span>
-      <span class="et-emoji" data-e="💪">💪</span>
-      <span class="et-emoji" data-e="🫡">🫡</span>
-      <span class="et-emoji" data-e="✅">✅</span>
+    <!-- Discord-style Emoji Picker -->
+    <div id="discordEmojiPicker" style="display:none;position:absolute;bottom:70px;left:0;z-index:300;background:#1e1d1c;border:1px solid var(--border);border-radius:14px;width:360px;box-shadow:0 16px 48px rgba(0,0,0,0.7);overflow:hidden;flex-direction:column;">
+      <!-- Tabs row -->
+      <div style="display:flex;border-bottom:1px solid var(--border);background:#1a1918;">
+        <button class="ep-tab active" data-cat="frequent" title="Frequently Used">🕐</button>
+        <button class="ep-tab" data-cat="smileys" title="Smileys">😀</button>
+        <button class="ep-tab" data-cat="gestures" title="Gestures">👍</button>
+        <button class="ep-tab" data-cat="nature" title="Nature">🌿</button>
+        <button class="ep-tab" data-cat="food" title="Food">🍕</button>
+        <button class="ep-tab" data-cat="activities" title="Activities">⚽</button>
+        <button class="ep-tab" data-cat="objects" title="Objects">💡</button>
+        <button class="ep-tab" data-cat="symbols" title="Symbols">💯</button>
+      </div>
+      <!-- Search -->
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);">
+        <input id="emojiSearch" type="text" placeholder="Find the perfect emoji" style="width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:0.83rem;font-family:inherit;box-sizing:border-box;">
+      </div>
+      <!-- Category label -->
+      <div id="emojiCatLabel" style="padding:6px 12px 2px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);font-weight:600;">Frequently Used</div>
+      <!-- Grid -->
+      <div id="emojiGrid" style="display:flex;flex-wrap:wrap;gap:2px;padding:4px 8px 10px;max-height:220px;overflow-y:auto;"></div>
     </div>
     <!-- Input row -->
     <div class="footer-row">
@@ -803,6 +851,14 @@ body {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Notifications
       </div>
+      <div class="settings-nav-item" data-tab="privacy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Privacy
+      </div>
+      <div class="settings-nav-item" data-tab="accessibility">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        Accessibility
+      </div>
       <div class="settings-nav-item" data-tab="account">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Account
@@ -839,6 +895,7 @@ body {
           <div class="settings-row">
             <div>
               <div class="settings-row-label">Email</div>
+              <div class="settings-row-sub">Your login email address</div>
             </div>
             <div class="settings-row-right">
               <input class="s-input" type="text" id="emailDisplay" disabled>
@@ -856,6 +913,27 @@ body {
 
       <!-- APPEARANCE TAB -->
       <div data-tab-content="appearance" style="display:none;">
+        <div class="settings-section">
+          <h3>Theme</h3>
+          <div class="theme-grid" id="themeGrid">
+            <div class="theme-option selected" data-theme="dark" title="Dark">
+              <div class="theme-preview" style="background:linear-gradient(135deg,#1a1918,#11100f);"></div>
+              <span>Dark</span>
+            </div>
+            <div class="theme-option" data-theme="darker" title="Darker">
+              <div class="theme-preview" style="background:linear-gradient(135deg,#0d0d0d,#050505);"></div>
+              <span>Darker</span>
+            </div>
+            <div class="theme-option" data-theme="midnight" title="Midnight">
+              <div class="theme-preview" style="background:linear-gradient(135deg,#0d1117,#161b22);"></div>
+              <span>Midnight</span>
+            </div>
+            <div class="theme-option" data-theme="charcoal" title="Charcoal">
+              <div class="theme-preview" style="background:linear-gradient(135deg,#2b2b2b,#1a1a1a);"></div>
+              <span>Charcoal</span>
+            </div>
+          </div>
+        </div>
         <div class="settings-section">
           <h3>Accent Colour</h3>
           <div class="color-grid" id="colorGrid">
@@ -887,11 +965,24 @@ body {
           <div class="settings-row" style="border-bottom:none;">
             <div class="settings-row-label">Message text size</div>
             <div class="settings-row-right">
-              <select class="s-input" id="fontSizeSelect" style="width:120px;cursor:pointer;">
-                <option value="0.85rem">Small</option>
+              <select class="s-input s-select" id="fontSizeSelect" style="width:130px;cursor:pointer;">
+                <option value="0.82rem">Small</option>
                 <option value="0.91rem" selected>Normal</option>
                 <option value="1rem">Large</option>
                 <option value="1.1rem">X-Large</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Message Density</h3>
+          <div class="settings-row" style="border-bottom:none;">
+            <div class="settings-row-label">Bubble spacing</div>
+            <div class="settings-row-right">
+              <select class="s-input s-select" id="densitySelect" style="width:130px;cursor:pointer;">
+                <option value="compact">Compact</option>
+                <option value="normal" selected>Normal</option>
+                <option value="spacious">Spacious</option>
               </select>
             </div>
           </div>
@@ -908,13 +999,29 @@ body {
             <div class="bg-option" data-bg="radial-gradient(ellipse at bottom right,#1a0a2e 0%,#0f0e0d 70%)" style="background:radial-gradient(ellipse at bottom right,#1a0a2e 0%,#0f0e0d 70%);"><span>Deep Purple</span></div>
             <div class="bg-option" data-bg="linear-gradient(160deg,#0f2027,#203a43,#2c5364)" style="background:linear-gradient(160deg,#0f2027,#203a43,#2c5364);"><span>Ocean</span></div>
             <div class="bg-option" data-bg="linear-gradient(160deg,#1a1a2e,#16213e,#0f3460)" style="background:linear-gradient(160deg,#1a1a2e,#16213e,#0f3460);"><span>Midnight Blue</span></div>
-            <div class="bg-option" data-bg="radial-gradient(ellipse at 20% 80%,#1a0a0a 0%,#0f0e0d 70%)" style="background:radial-gradient(ellipse at 20% 80%,#2a0a0a 0%,#0f0e0d 70%);"><span>Dark Red</span></div>
+            <div class="bg-option" data-bg="radial-gradient(ellipse at 20% 80%,#2a0a0a 0%,#0f0e0d 70%)" style="background:radial-gradient(ellipse at 20% 80%,#2a0a0a 0%,#0f0e0d 70%);"><span>Dark Red</span></div>
             <div class="bg-option" data-bg="linear-gradient(135deg,#0a1628 0%,#0f2847 50%,#0a1628 100%)" style="background:linear-gradient(135deg,#0a1628 0%,#0f2847 50%,#0a1628 100%);"><span>Navy</span></div>
             <div class="bg-option" data-bg="linear-gradient(160deg,#0a1f1a,#0f2d24,#0a1f1a)" style="background:linear-gradient(160deg,#0a1f1a,#0f2d24,#0a1f1a);"><span>Forest</span></div>
             <div class="bg-option" data-bg="radial-gradient(ellipse at center,#1a1410 0%,#0d0b09 100%)" style="background:radial-gradient(ellipse at center,#1a1410 0%,#0d0b09 100%);"><span>Warm Dark</span></div>
             <div class="bg-option" data-bg="linear-gradient(160deg,#1f1535,#2d1b69,#1a0a3d)" style="background:linear-gradient(160deg,#1f1535,#2d1b69,#1a0a3d);"><span>Violet Dusk</span></div>
             <div class="bg-option" data-bg="repeating-linear-gradient(45deg,#141312 0px,#141312 10px,#161514 10px,#161514 20px)" style="background:repeating-linear-gradient(45deg,#141312 0px,#141312 10px,#161514 10px,#161514 20px);"><span>Subtle Grid</span></div>
             <div class="bg-option" data-bg="radial-gradient(ellipse at 70% 30%,#0a2010 0%,#080c08 70%)" style="background:radial-gradient(ellipse at 70% 30%,#0a2010 0%,#080c08 70%);"><span>Jungle</span></div>
+            <div class="bg-option" data-bg="linear-gradient(135deg,#1a0a1a,#2d0a2d,#1a0a1a)" style="background:linear-gradient(135deg,#1a0a1a,#2d0a2d,#1a0a1a);"><span>Deep Plum</span></div>
+            <div class="bg-option" data-bg="radial-gradient(ellipse at 30% 70%,#0a1e2e 0%,#050d14 70%)" style="background:radial-gradient(ellipse at 30% 70%,#0a1e2e 0%,#050d14 70%);"><span>Abyss</span></div>
+            <div class="bg-option" data-bg="linear-gradient(160deg,#1a1200,#2a1f00,#1a1200)" style="background:linear-gradient(160deg,#1a1200,#2a1f00,#1a1200);"><span>Ember</span></div>
+            <div class="bg-option" data-bg="radial-gradient(ellipse at 50% 0%,#0f1a0a,#080f05 70%)" style="background:radial-gradient(ellipse at 50% 0%,#0f1a0a,#080f05 70%);"><span>Moss</span></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Custom Background</h3>
+          <div class="settings-row-sub" style="margin-bottom:12px;">Upload your own image to use as the chat background</div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="s-btn s-btn-primary" id="bgUploadBtn">Upload Image</button>
+            <button class="s-btn s-btn-secondary" id="bgRemoveBtn">Remove Custom</button>
+            <input type="file" id="bgFileInput" accept="image/*" style="display:none;">
+          </div>
+          <div id="bgUploadPreview" style="margin-top:12px;display:none;">
+            <img id="bgUploadThumb" style="height:70px;border-radius:10px;object-fit:cover;border:2px solid var(--accent);">
           </div>
         </div>
       </div>
@@ -942,6 +1049,7 @@ body {
         </div>
         <div class="settings-section">
           <h3>Custom Status Text</h3>
+          <div class="settings-row-sub" style="margin-bottom:10px;">A short message shown below your name</div>
           <div class="settings-row" style="border-bottom:none;">
             <input class="s-input" type="text" id="customStatusInput" placeholder="What are you up to?" maxlength="60" style="width:100%;">
           </div>
@@ -954,11 +1062,11 @@ body {
       <!-- NOTIFICATIONS TAB -->
       <div data-tab-content="notifications" style="display:none;">
         <div class="settings-section">
-          <h3>Notifications</h3>
+          <h3>Message Notifications</h3>
           <div class="settings-row">
             <div>
-              <div class="settings-row-label">Message Notifications</div>
-              <div class="settings-row-sub">Get notified for new messages</div>
+              <div class="settings-row-label">Enable Notifications</div>
+              <div class="settings-row-sub">Get notified when you receive a message</div>
             </div>
             <div class="settings-row-right">
               <label class="toggle-switch">
@@ -967,10 +1075,10 @@ body {
               </label>
             </div>
           </div>
-          <div class="settings-row" style="border-bottom:none;">
+          <div class="settings-row">
             <div>
-              <div class="settings-row-label">Sound</div>
-              <div class="settings-row-sub">Play sound on new message</div>
+              <div class="settings-row-label">Sound Effects</div>
+              <div class="settings-row-sub">Play a sound when a message is received</div>
             </div>
             <div class="settings-row-right">
               <label class="toggle-switch">
@@ -979,17 +1087,230 @@ body {
               </label>
             </div>
           </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Notification Volume</div>
+              <div class="settings-row-sub">Adjust the notification sound volume</div>
+            </div>
+            <div class="settings-row-right">
+              <div class="slider-wrap">
+                <input type="range" class="s-slider" id="notifVolumeSlider" min="0" max="100" value="70">
+                <span class="slider-val" id="notifVolumeVal">70%</span>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Group Notifications</div>
+              <div class="settings-row-sub">Also get notified for group messages</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="groupNotifToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Do Not Disturb</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Enable DND Schedule</div>
+              <div class="settings-row-sub">Silence notifications during set hours</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="dndToggle">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Show Unread Badge</div>
+              <div class="settings-row-sub">Display unread count on conversations</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="badgeToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRIVACY TAB -->
+      <div data-tab-content="privacy" style="display:none;">
+        <div class="settings-section">
+          <h3>Read Receipts</h3>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Send Read Receipts</div>
+              <div class="settings-row-sub">Let others know when you've read their messages</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="readReceiptsToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Presence</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Show Online Status</div>
+              <div class="settings-row-sub">Let others see when you're online</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="showStatusToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Show Last Seen</div>
+              <div class="settings-row-sub">Display when you were last active</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="lastSeenToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Profile Visibility</h3>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Profile Picture Visibility</div>
+              <div class="settings-row-sub">Who can see your profile picture</div>
+            </div>
+            <div class="settings-row-right">
+              <select class="s-input s-select" style="width:140px;cursor:pointer;">
+                <option>Everyone</option>
+                <option>Contacts Only</option>
+                <option>Nobody</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCESSIBILITY TAB -->
+      <div data-tab-content="accessibility" style="display:none;">
+        <div class="settings-section">
+          <h3>Motion & Animation</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Reduce Motion</div>
+              <div class="settings-row-sub">Minimize animations throughout the app</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="reduceMotionToggle">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Auto-play GIFs</div>
+              <div class="settings-row-sub">Automatically play animated images</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="autoGifToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Interface</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Compact Mode</div>
+              <div class="settings-row-sub">Show more messages on screen at once</div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="compactToggle">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">UI Scale</div>
+              <div class="settings-row-sub">Adjust the overall interface size</div>
+            </div>
+            <div class="settings-row-right">
+              <div class="slider-wrap">
+                <input type="range" class="s-slider" id="uiScaleSlider" min="80" max="120" value="100">
+                <span class="slider-val" id="uiScaleVal">100%</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- ACCOUNT TAB -->
       <div data-tab-content="account" style="display:none;">
         <div class="settings-section">
-          <h3>Account</h3>
+          <h3>Security</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Reset Password</div>
+              <div class="settings-row-sub">Send a password reset link to your email</div>
+            </div>
+            <div class="settings-row-right">
+              <button class="s-btn s-btn-secondary" id="resetPasswordBtn">Send Reset Link</button>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Two-Factor Authentication</div>
+              <div class="settings-row-sub">Add an extra layer of security</div>
+            </div>
+            <div class="settings-row-right">
+              <span style="font-size:0.78rem;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">Coming Soon</span>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Data</h3>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Export My Data</div>
+              <div class="settings-row-sub">Download a copy of your account data</div>
+            </div>
+            <div class="settings-row-right">
+              <span style="font-size:0.78rem;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">Coming Soon</span>
+            </div>
+          </div>
+          <div class="settings-row" style="border-bottom:none;">
+            <div>
+              <div class="settings-row-label">Delete Account</div>
+              <div class="settings-row-sub">Permanently remove your account and all data</div>
+            </div>
+            <div class="settings-row-right">
+              <span style="font-size:0.78rem;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">Coming Soon</span>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Session</h3>
           <div class="settings-row" style="border-bottom:none;">
             <div>
               <div class="settings-row-label">Sign Out</div>
-              <div class="settings-row-sub">Sign out of your account</div>
+              <div class="settings-row-sub">Sign out of this device</div>
             </div>
             <div class="settings-row-right">
               <button class="s-btn" style="background:#3a1010;color:#f87171;border:1px solid #5a1a1a;" id="logoutBtn">Sign Out</button>
@@ -999,6 +1320,26 @@ body {
       </div>
     </div>
   </div>
+</div>
+
+<!-- Password Reset Popup -->
+<div id="pwResetPopup" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:#1e1d1c;border:1px solid var(--border);border-radius:18px;padding:28px 32px;width:min(400px,90vw);text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.7);animation:settingsIn 0.25s cubic-bezier(.22,1,.36,1);">
+    <div style="font-size:2rem;margin-bottom:10px;">📧</div>
+    <div style="font-weight:700;font-size:1.05rem;margin-bottom:8px;">Reset link sent!</div>
+    <div style="font-size:0.88rem;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">We've sent a password reset link to your email address. If you don't see it, check your spam folder — sometimes it ends up there.</div>
+    <button class="s-btn s-btn-primary" id="pwResetOkBtn" style="width:100%;padding:12px;">Got it</button>
+  </div>
+</div>
+
+<!-- Status Quick Picker (bottom left) -->
+<div id="statusQuickMenu" style="display:none;position:fixed;z-index:600;bottom:70px;left:8px;background:#1e1d1c;border:1px solid var(--border);border-radius:14px;padding:8px;min-width:200px;box-shadow:0 12px 40px rgba(0,0,0,0.6);animation:settingsIn 0.2s cubic-bezier(.22,1,.36,1);">
+  <div class="sqm-item" data-status="online"><div class="status-dot-sm status-online"></div> Online</div>
+  <div class="sqm-item" data-status="idle"><div class="status-dot-sm status-idle"></div> Idle</div>
+  <div class="sqm-item" data-status="dnd"><div class="status-dot-sm status-dnd"></div> Do Not Disturb</div>
+  <div class="sqm-item" data-status="offline"><div class="status-dot-sm status-offline"></div> Invisible</div>
+  <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+  <div class="sqm-item" id="sqmOpenSettings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Settings</div>
 </div>
 
 <!-- CALL MODAL -->
@@ -1290,11 +1631,25 @@ document.getElementById('saveStatusBtn').addEventListener('click', async () => {
   const acc = localStorage.getItem('groups_accent');
   if (acc) applyAccent(acc);
   const bg = localStorage.getItem('groups_bg');
-  if (bg && bg !== 'none') document.querySelector('.main').style.setProperty('--bg-custom', bg);
+  if (bg && bg !== 'none') {
+    document.querySelector('.main').style.setProperty('--bg-custom', bg);
+    if (bg.startsWith('url(')) {
+      document.querySelector('.main').style.backgroundSize = 'cover';
+      document.querySelector('.main').style.backgroundPosition = 'center';
+    }
+  }
   const font = localStorage.getItem('groups_font');
-  if (font) document.getElementById('messages').style.fontSize = font;
+  if (font) { document.getElementById('messages').style.fontSize = font; document.getElementById('fontSizeSelect').value = font; }
   const grad = localStorage.getItem('groups_bubble_grad');
   if (grad) document.documentElement.style.setProperty('--bubble-out', grad);
+  const theme = localStorage.getItem('groups_theme');
+  if (theme) applyTheme(theme);
+  const density = localStorage.getItem('groups_density');
+  if (density) { const gaps = { compact:'0px', normal:'2px', spacious:'6px' }; document.getElementById('messages').style.gap = gaps[density]||'2px'; document.getElementById('densitySelect').value = density; }
+  const scale = localStorage.getItem('groups_ui_scale');
+  if (scale) { document.documentElement.style.fontSize = (parseInt(scale)/100*16)+'px'; document.getElementById('uiScaleSlider').value = scale; document.getElementById('uiScaleVal').textContent = scale+'%'; }
+  const vol = localStorage.getItem('groups_notif_vol');
+  if (vol) { document.getElementById('notifVolumeSlider').value = vol; document.getElementById('notifVolumeVal').textContent = vol+'%'; }
 })();
 
 // ══════════════════════════════════════════════════════
@@ -1304,12 +1659,29 @@ function loadConversations() {
   if (conversationsUnsub) conversationsUnsub();
   conversationsUnsub = onValue(ref(db, 'conversations/' + currentUser.uid), async snap => {
     const list = document.getElementById('chatList');
-    list.innerHTML = '';
     if (!snap.exists()) { list.innerHTML = '<div class="no-chats">No conversations yet.</div>'; return; }
     const entries = Object.entries(snap.val()).sort((a,b)=>(b[1].lastTimestamp||0)-(a[1].lastTimestamp||0));
+    const newIds = new Set(entries.map(([,d])=>d.groupID||d.email).filter(Boolean));
+    // Remove stale entries
+    list.querySelectorAll('.chat-entry').forEach(el => { if (!newIds.has(el.dataset.id)) el.remove(); });
+    list.querySelector('.no-chats')?.remove();
     for (const [, data] of entries) {
-      await renderChatEntry(data);
+      const id = data.groupID || data.email;
+      if (!id) continue;
+      const existing = list.querySelector(`.chat-entry[data-id="${id}"]`);
+      if (existing) {
+        const prev = existing.querySelector('.ce-preview');
+        if (prev) prev.textContent = data.lastMessage || '';
+      } else {
+        await renderChatEntry(data);
+      }
     }
+    // Re-sort DOM order
+    entries.forEach(([,data]) => {
+      const id = data.groupID || data.email;
+      const el = list.querySelector(`.chat-entry[data-id="${id}"]`);
+      if (el) list.appendChild(el);
+    });
     if (activeChat) {
       document.querySelector(`.chat-entry[data-id="${activeChat}"]`)?.classList.add('active');
     }
@@ -1981,20 +2353,187 @@ function clearReply() {
 document.getElementById('reply-cancel').addEventListener('click', clearReply);
 
 // ══════════════════════════════════════════════════════
-// EMOJI TOOLBAR
+// DISCORD-STYLE EMOJI PICKER
 // ══════════════════════════════════════════════════════
-document.getElementById('emojiToggleBtn').addEventListener('click', () => {
-  document.getElementById('emojiToolbar').classList.toggle('visible');
-});
-document.querySelectorAll('.et-emoji').forEach(em => {
-  em.addEventListener('click', () => {
-    const inp = document.getElementById('msgInput');
-    const pos = inp.selectionStart;
-    const val = inp.value;
-    inp.value = val.slice(0,pos) + em.dataset.e + val.slice(pos);
-    inp.focus();
-    inp.selectionStart = inp.selectionEnd = pos + em.dataset.e.length;
+const EMOJI_CATS = {
+  frequent: ['😂','❤️','🔥','👍','😮','😢','🎉','💀','🤣','😭','💯','👀','🥶','😍','🙏','😎','🤔','💪','🫡','✅','🫶','💥','🤯','🥹','😤','👏','🤝','🫠','😅','🤑'],
+  smileys:  ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢','🤫','🤔','🫠','🤐','🥸','😐','😑','😶','🫥','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','🫤','😟','🙁','☹️','😮','😯','😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'],
+  gestures: ['👍','👎','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👏','🙌','🫶','🤲','🤝','🙏','✍️','💅','🤳','💪','🦵','🦶','👂','🦻','👃','👁️','👅','🫦','👄'],
+  nature:   ['🌸','🌺','🌻','🌹','🌷','🌼','💐','🍀','🌿','☘️','🍃','🍂','🍁','🍄','🌾','🌵','🌴','🌳','🌲','🪨','🪵','🌱','🪴','🎋','🎍','🪸','🪷','🌊','🌈','⛅','🌤️','🌦️','⛈️','🌩️','🌧️','🌨️','❄️','☃️','⛄','🌬️','💨','🌪️','🌫️','🌀','🌙','⭐','🌟','✨','⚡','🔥','💧','🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🦄','🐔','🐧','🐦','🦅','🦆','🦉','🦇','🐝','🪱','🐛','🦋'],
+  food:     ['🍕','🍔','🌮','🌯','🥪','🥨','🧀','🍳','🥚','🍿','🧈','🥞','🧇','🥓','🌭','🍟','🍖','🍗','🥩','🥗','🥘','🍜','🍝','🍛','🍣','🍱','🍤','🍙','🍚','🍘','🍥','🥮','🧆','🥚','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍷','🥂','🍸','🍹','🍺','🍻','🥃','🧉','☕','🍵','🧃','🥤','🧋'],
+  activities:['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🥍','🏑','🥊','🥋','🎯','🤿','🎿','🛷','🥌','🎣','🤸','🏄','🚴','🏊','🏋️','🤼','🤺','🏇','⛷️','🧘','🎪','🤹','🎭','🎨','🎬','🎤','🎧','🎼','🎵','🎶','🥁','🎷','🎸','🎹','🪗','🎺','🎻','🪕','🎮','🕹️','🎰','🎲','🧩','🪀','🪁','🎯','🎳'],
+  objects:  ['💡','🔦','🕯️','💰','💳','💎','⚖️','🔧','🔨','⚒️','🛠️','⛏️','🔩','🪛','🔑','🗝️','🔒','🔓','🚪','🪞','🪑','🛋️','🚿','🛁','🪤','🧹','🧺','🧻','🪣','🧴','🧷','🧲','🪜','🛒','🎁','🎈','🎀','🎊','🎉','🪩','🎏','🎐','🧧','🪔','✉️','📩','📨','📧','📝','📋','📁','📂','🗂️','📅','📆','📇','📈','📉','📊','📌','📍','✂️','🖇️','🖊️','🖋️','✒️','🔍','🔎','📱','💻','🖥️','🖨️','⌨️','🖱️'],
+  symbols:  ['💯','✅','❌','❎','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔶','🔷','🔸','🔹','🔺','🔻','💠','🔘','🔲','🔳','▪️','▫️','◾','◽','◼️','◻️','🔱','⚜️','🔰','♻️','✴️','❇️','💫','✨','⭐','🌟','💥','🔥','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','✡️','🔯','🛐','⛎','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','🆔','⚡','♾️']
+};
+let emojiFrequent = JSON.parse(localStorage.getItem('groups_emoji_freq') || '["😂","❤️","🔥","👍","😮","😢","🎉","💀","🤣","😭","💯","👀","🥶","😍","🙏","😎","🤔","💪","🫡","✅"]');
+let currentEmojiCat = 'frequent';
+
+function buildEmojiGrid(cat, filter='') {
+  const grid = document.getElementById('emojiGrid');
+  const label = document.getElementById('emojiCatLabel');
+  grid.innerHTML = '';
+  const catLabels = { frequent:'Frequently Used', smileys:'Smileys & People', gestures:'Gestures', nature:'Nature & Animals', food:'Food & Drink', activities:'Activities', objects:'Objects', symbols:'Symbols & Signs' };
+  label.textContent = filter ? 'Search Results' : (catLabels[cat] || cat);
+  let list = filter ? Object.values(EMOJI_CATS).flat().filter((e,i,a)=>a.indexOf(e)===i&&e.includes(filter)) : (cat === 'frequent' ? emojiFrequent : EMOJI_CATS[cat] || []);
+  if (!list.length) { grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;padding:10px;">No results</div>'; return; }
+  list.forEach(e => {
+    const span = document.createElement('span');
+    span.className = 'ep-e'; span.textContent = e;
+    span.addEventListener('click', () => {
+      const inp = document.getElementById('msgInput');
+      const pos = inp.selectionStart; const val = inp.value;
+      inp.value = val.slice(0,pos) + e + val.slice(pos);
+      inp.focus(); inp.selectionStart = inp.selectionEnd = pos + e.length;
+      // Track frequency
+      emojiFrequent = [e, ...emojiFrequent.filter(x=>x!==e)].slice(0,30);
+      localStorage.setItem('groups_emoji_freq', JSON.stringify(emojiFrequent));
+      document.getElementById('discordEmojiPicker').style.display = 'none';
+    });
+    grid.appendChild(span);
   });
+}
+
+document.getElementById('emojiToggleBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const picker = document.getElementById('discordEmojiPicker');
+  const isVisible = picker.style.display !== 'none';
+  picker.style.display = isVisible ? 'none' : 'flex';
+  if (!isVisible) buildEmojiGrid('frequent');
+});
+
+document.querySelectorAll('.ep-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ep-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    currentEmojiCat = tab.dataset.cat;
+    document.getElementById('emojiSearch').value = '';
+    buildEmojiGrid(currentEmojiCat);
+  });
+});
+
+document.getElementById('emojiSearch').addEventListener('input', e => {
+  buildEmojiGrid(currentEmojiCat, e.target.value.trim());
+});
+
+document.addEventListener('click', e => {
+  const picker = document.getElementById('discordEmojiPicker');
+  if (!e.target.closest('#discordEmojiPicker') && !e.target.closest('#emojiToggleBtn')) {
+    picker.style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// STATUS QUICK MENU (click profile bottom left)
+// ══════════════════════════════════════════════════════
+document.getElementById('sidebarUserCard').addEventListener('click', e => {
+  if (e.target.closest('#settingsBtn')) return;
+  const menu = document.getElementById('statusQuickMenu');
+  const isVisible = menu.style.display !== 'none';
+  menu.style.display = isVisible ? 'none' : 'block';
+  e.stopPropagation();
+});
+
+document.querySelectorAll('.sqm-item[data-status]').forEach(item => {
+  item.addEventListener('click', async () => {
+    currentStatus = item.dataset.status;
+    await update(ref(db, 'users/' + currentUser.uid), { status: currentStatus });
+    updateSidebarUser();
+    document.querySelectorAll('.status-option').forEach(o => o.classList.toggle('selected', o.dataset.status === currentStatus));
+    document.getElementById('statusQuickMenu').style.display = 'none';
+  });
+});
+
+document.getElementById('sqmOpenSettings').addEventListener('click', () => {
+  document.getElementById('statusQuickMenu').style.display = 'none';
+  openSettings();
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#statusQuickMenu') && !e.target.closest('#sidebarUserCard')) {
+    document.getElementById('statusQuickMenu').style.display = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// RESET PASSWORD
+// ══════════════════════════════════════════════════════
+document.getElementById('resetPasswordBtn').addEventListener('click', async () => {
+  const { sendPasswordResetEmail } = await import('https://esm.sh/firebase/auth');
+  try {
+    await sendPasswordResetEmail(auth, currentUser.email);
+    const popup = document.getElementById('pwResetPopup');
+    popup.style.display = 'flex';
+  } catch(err) {
+    alert('Failed to send reset email: ' + err.message);
+  }
+});
+document.getElementById('pwResetOkBtn').addEventListener('click', () => {
+  document.getElementById('pwResetPopup').style.display = 'none';
+});
+
+// ══════════════════════════════════════════════════════
+// THEME SWITCHER (applies globally to sidebar + settings + everything)
+// ══════════════════════════════════════════════════════
+const THEMES = {
+  dark:      { '--sidebar-bg':'#1a1918','--main-bg':'#11100f','--header-bg':'#161514','--bubble-in':'#2d2c2b','--border':'rgba(255,255,255,0.08)','--text':'#f0ede8','--text-muted':'#6b6966','--text-dim':'#9a9693','--avatar-bg':'#3d3b39' },
+  darker:    { '--sidebar-bg':'#0d0d0d','--main-bg':'#050505','--header-bg':'#0a0a0a','--bubble-in':'#1a1a1a','--border':'rgba(255,255,255,0.06)','--text':'#e8e8e8','--text-muted':'#555','--text-dim':'#777','--avatar-bg':'#2a2a2a' },
+  midnight:  { '--sidebar-bg':'#161b22','--main-bg':'#0d1117','--header-bg':'#161b22','--bubble-in':'#21262d','--border':'rgba(255,255,255,0.08)','--text':'#e6edf3','--text-muted':'#656d76','--text-dim':'#8b949e','--avatar-bg':'#30363d' },
+  charcoal:  { '--sidebar-bg':'#2b2b2b','--main-bg':'#1a1a1a','--header-bg':'#222','--bubble-in':'#333','--border':'rgba(255,255,255,0.09)','--text':'#f5f5f5','--text-muted':'#6a6a6a','--text-dim':'#909090','--avatar-bg':'#404040' },
+};
+function applyTheme(name) {
+  const t = THEMES[name]; if (!t) return;
+  Object.entries(t).forEach(([k,v]) => document.documentElement.style.setProperty(k,v));
+  document.querySelectorAll('.theme-option').forEach(o=>o.classList.toggle('selected',o.dataset.theme===name));
+  localStorage.setItem('groups_theme', name);
+}
+document.querySelectorAll('.theme-option').forEach(opt => {
+  opt.addEventListener('click', () => applyTheme(opt.dataset.theme));
+});
+
+// ══════════════════════════════════════════════════════
+// BACKGROUND CUSTOM UPLOAD
+// ══════════════════════════════════════════════════════
+document.getElementById('bgUploadBtn').addEventListener('click', () => document.getElementById('bgFileInput').click());
+document.getElementById('bgFileInput').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  e.target.value = '';
+  const compressed = await compressImage(file, 1920, 0.85);
+  const bg = `url(${compressed})`;
+  document.querySelector('.main').style.setProperty('--bg-custom', bg);
+  document.querySelector('.main').style.backgroundSize = 'cover';
+  document.querySelector('.main').style.backgroundPosition = 'center';
+  localStorage.setItem('groups_bg', bg);
+  document.getElementById('bgUploadThumb').src = compressed;
+  document.getElementById('bgUploadPreview').style.display = 'block';
+  document.querySelectorAll('.bg-option').forEach(o=>o.classList.remove('selected'));
+});
+document.getElementById('bgRemoveBtn').addEventListener('click', () => {
+  document.querySelector('.main').style.removeProperty('--bg-custom');
+  localStorage.removeItem('groups_bg');
+  document.getElementById('bgUploadPreview').style.display = 'none';
+  document.getElementById('bgUploadThumb').src = '';
+});
+
+// ══════════════════════════════════════════════════════
+// NOTIFICATION VOLUME SLIDER
+// ══════════════════════════════════════════════════════
+document.getElementById('notifVolumeSlider').addEventListener('input', e => {
+  document.getElementById('notifVolumeVal').textContent = e.target.value + '%';
+  localStorage.setItem('groups_notif_vol', e.target.value);
+});
+document.getElementById('uiScaleSlider').addEventListener('input', e => {
+  document.getElementById('uiScaleVal').textContent = e.target.value + '%';
+  document.documentElement.style.fontSize = (parseInt(e.target.value)/100*16) + 'px';
+  localStorage.setItem('groups_ui_scale', e.target.value);
+});
+
+// ══════════════════════════════════════════════════════
+// DENSITY SELECT
+// ══════════════════════════════════════════════════════
+document.getElementById('densitySelect').addEventListener('change', e => {
+  const gaps = { compact:'0px', normal:'2px', spacious:'6px' };
+  document.getElementById('messages').style.gap = gaps[e.target.value] || '2px';
+  localStorage.setItem('groups_density', e.target.value);
 });
 
 // ══════════════════════════════════════════════════════
@@ -2198,10 +2737,6 @@ function readAsBase64(file) {
   });
 }
 
-// Sidebar user click = open settings
-document.getElementById('sidebarUserCard').addEventListener('click', e => {
-  if (!e.target.closest('#settingsBtn')) openSettings();
-});
 </script>
 </body>
 </html>
