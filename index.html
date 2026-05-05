@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="icon" href="favicon.png" type="image/png">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,13 +34,9 @@
         #auth-btn:hover { opacity:0.9; }
         #auth-btn:disabled { background:#334155; cursor:not-allowed; }
         #status-message { margin-top:16px; font-size:0.85rem; color:#ff4b4b; min-height:20px; }
+        .success { color:#4ade80 !important; }
     </style>
 </head>
-    <!-- Footer Link -->
-    <footer style="position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #64748b; text-align: center;">
-        <a href="https://group-chats.github.io/tos/terms-of-service.html" style="color: #64748b; text-decoration: none;">Terms of Service</a>
-    </footer>
-</body>
 <body>
     <div class="blob" style="top:10%;left:10%;"></div>
     <div class="blob" style="bottom:10%;right:10%;background:#7c3aed;"></div>
@@ -65,10 +60,9 @@
         <p id="status-message"></p>
     </div>
 
-    <!-- Firebase via esm.sh (reliable CDN that works in plain script tags) -->
     <script type="module">
         import { initializeApp } from 'https://esm.sh/firebase/app';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://esm.sh/firebase/auth';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from 'https://esm.sh/firebase/auth';
         import { getDatabase, ref, set } from 'https://esm.sh/firebase/database';
 
         const app = initializeApp({
@@ -90,6 +84,7 @@
             document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
             document.getElementById('confirm-group').style.display = mode === 'signup' ? 'block' : 'none';
             document.getElementById('status-message').textContent = '';
+            document.getElementById('status-message').className = '';
         }
 
         async function handleAuth() {
@@ -111,17 +106,33 @@
             status.textContent = '';
 
             try {
-                let userCred;
                 if (mode === 'signin') {
-                    userCred = await signInWithEmailAndPassword(auth, email, password);
+                    const userCred = await signInWithEmailAndPassword(auth, email, password);
+                    if (!userCred.user.emailVerified) {
+                        await auth.signOut();
+                        status.className = '';
+                        status.textContent = 'Please verify your email before signing in. Check your inbox.';
+                        btn.disabled = false;
+                        btn.textContent = 'Sign In';
+                        return;
+                    }
+                    window.location.href = 'chat.html';
                 } else {
-                    userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                    await sendEmailVerification(userCred.user);
+                    // Save to DB so they're searchable (we save even before verification
+                    // so others can find them once they verify)
                     await set(ref(db, 'users/' + userCred.user.uid), {
                         email: email.toLowerCase(),
                         uid: userCred.user.uid
                     });
+                    await auth.signOut();
+                    status.className = 'success';
+                    status.textContent = '✓ Account created! Check your email to verify your account, then sign in.';
+                    btn.disabled = false;
+                    setMode('signin');
+                    btn.textContent = 'Sign In';
                 }
-                window.location.href = 'chat.html';
             } catch (err) {
                 const errorMap = {
                     'auth/user-not-found': 'No account found with this email.',
@@ -131,6 +142,7 @@
                     'auth/invalid-email': 'Please enter a valid email address.',
                     'auth/too-many-requests': 'Too many attempts. Please try again later.',
                 };
+                status.className = '';
                 status.textContent = errorMap[err.code] || err.message;
                 btn.disabled = false;
                 setMode(mode);

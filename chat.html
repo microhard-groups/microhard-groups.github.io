@@ -1,27 +1,46 @@
 <!DOCTYPE html>
 <html style="background-color:#11100f;">
-<link rel="icon" href="favicon.png" type="image/png">
 <head>
     <title>Groups - Chat</title>
     <style>
         * { box-sizing:border-box; }
         body { margin:0; background:#11100f; color:white; font-family:'Segoe UI',sans-serif; display:flex; height:100vh; overflow:hidden; }
-        .sidebar { width:300px; border-right:1px solid #3b3a39; background:#201f1e; padding:20px; display:flex; flex-direction:column; }
-        .sidebar h3 { margin:0 0 16px 0; font-size:1.2rem; }
+
+        /* Sidebar */
+        .sidebar { width:300px; border-right:1px solid #3b3a39; background:#201f1e; padding:16px; display:flex; flex-direction:column; gap:12px; }
+        .sidebar-top { display:flex; align-items:center; justify-content:space-between; }
+        .sidebar-top h3 { margin:0; font-size:1.1rem; }
+        #logoutBtn { padding:6px 12px; background:transparent; border:1px solid #3b3a39; color:#888; border-radius:8px; cursor:pointer; font-size:0.8rem; }
+        #logoutBtn:hover { background:#2d2c2c; color:white; }
+
         #userSearch { width:100%; padding:10px 14px; background:#11100f; border:1px solid #3b3a39; color:white; border-radius:8px; font-size:0.9rem; }
         #userSearch:focus { outline:none; border-color:#5b5fc7; }
         #userSearch::placeholder { color:#555; }
-        #results { background:#2d2c2c; border-radius:8px; border:1px solid #5b5fc7; display:none; margin-top:6px; overflow:hidden; max-height:300px; overflow-y:auto; }
+
+        #results { background:#2d2c2c; border-radius:8px; border:1px solid #5b5fc7; display:none; overflow:hidden; }
         .user-item { padding:12px 14px; cursor:pointer; border-bottom:1px solid #3b3a39; font-size:0.9rem; }
         .user-item:last-child { border-bottom:none; }
         .user-item:hover { background:#5b5fc7; }
         .no-result { padding:12px 14px; color:#888; font-size:0.85rem; }
-        #chatList { margin-top:16px; flex:1; overflow-y:auto; }
-        .chat-entry { padding:12px 14px; border-radius:8px; cursor:pointer; font-size:0.88rem; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+
+        /* Chat list */
+        .section-label { font-size:0.72rem; color:#555; text-transform:uppercase; letter-spacing:0.08em; padding:0 4px; }
+        #chatList { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:2px; }
+        .chat-entry {
+            padding:10px 12px; border-radius:8px; cursor:pointer;
+            display:flex; flex-direction:column; gap:2px;
+        }
         .chat-entry:hover { background:#2d2c2c; }
-        .chat-entry.active { background:#5b5fc7; color:white; }
+        .chat-entry.active { background:#5b5fc7; }
+        .chat-entry .ce-email { font-size:0.88rem; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .chat-entry.active .ce-email { color:white; }
+        .chat-entry .ce-preview { font-size:0.78rem; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .chat-entry.active .ce-preview { color:rgba(255,255,255,0.6); }
+        .no-chats { font-size:0.82rem; color:#444; padding:8px 4px; }
+
+        /* Main */
         .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-        #chat-header { padding:16px 20px; border-bottom:1px solid #3b3a39; font-weight:600; font-size:0.95rem; color:#ccc; background:#161514; }
+        #chat-header { padding:14px 20px; border-bottom:1px solid #3b3a39; font-weight:600; font-size:0.95rem; color:#ccc; background:#161514; min-height:50px; display:flex; align-items:center; }
         #messages { flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
         .msg-wrap { display:flex; flex-direction:column; }
         .msg-wrap.sent { align-items:flex-end; }
@@ -31,28 +50,30 @@
         .received .msg { background:#2d2c2b; border-bottom-left-radius:4px; }
         .msg-sender { font-size:0.72rem; color:rgba(255,255,255,0.4); margin-bottom:3px; }
         .empty-state { margin:auto; color:#444; font-size:0.9rem; text-align:center; }
-        .footer { padding:16px 20px; border-top:1px solid #3b3a39; display:flex; gap:10px; background:#161514; }
+        .footer { padding:14px 20px; border-top:1px solid #3b3a39; display:flex; gap:10px; background:#161514; }
         #msgInput { flex:1; padding:12px 16px; background:#2d2c2b; border:1px solid #3b3a39; color:white; border-radius:24px; font-size:0.92rem; }
         #msgInput:focus { outline:none; border-color:#5b5fc7; }
         #msgInput::placeholder { color:#555; }
+        #msgInput:disabled { opacity:0.4; cursor:not-allowed; }
         #sendBtn { background:#5b5fc7; color:white; border:none; padding:10px 22px; border-radius:24px; cursor:pointer; font-weight:600; }
-        #sendBtn:disabled { background:#333; cursor:not-allowed; }
-        #logoutBtn { margin-top:auto; padding:10px; background:transparent; border:1px solid #3b3a39; color:#888; border-radius:8px; cursor:pointer; font-size:0.85rem; width:100%; }
-        #logoutBtn:hover { background:#2d2c2c; color:white; }
+        #sendBtn:hover { opacity:0.85; }
+        #sendBtn:disabled { background:#333; cursor:not-allowed; opacity:1; }
     </style>
 </head>
-    <!-- Footer Link -->
-    <footer style="position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: #64748b; text-align: center; z-index: 100;">
-        <a href="https://group-chats.github.io/tos/terms-of-service.html" style="color: #64748b; text-decoration: none;">Terms of Service</a>
-    </footer>
 <body>
 <div class="sidebar">
-    <h3>💬 Groups</h3>
-    <input type="text" id="userSearch" placeholder="Search by email…">
+    <div class="sidebar-top">
+        <h3>💬 Groups</h3>
+        <button id="logoutBtn">Sign Out</button>
+    </div>
+
+    <input type="text" id="userSearch" placeholder="Search by email to new chat…">
     <div id="results"></div>
-    <div id="chatList"></div>
-    <button id="logoutBtn">Sign Out</button>
+
+    <span class="section-label">Conversations</span>
+    <div id="chatList"><div class="no-chats">No conversations yet.</div></div>
 </div>
+
 <div class="main">
     <div id="chat-header">Select a conversation</div>
     <div id="messages"><div class="empty-state"><p>Search for someone to start chatting 👆</p></div></div>
@@ -65,7 +86,7 @@
 <script type="module">
     import { initializeApp } from 'https://esm.sh/firebase/app';
     import { getAuth, onAuthStateChanged, signOut } from 'https://esm.sh/firebase/auth';
-    import { getDatabase, ref, get, push, onValue, serverTimestamp } from 'https://esm.sh/firebase/database';
+    import { getDatabase, ref, get, push, onValue, set, serverTimestamp } from 'https://esm.sh/firebase/database';
 
     const app = initializeApp({
         apiKey: "AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
@@ -74,196 +95,198 @@
         projectId: "groups-85638",
         appId: "1:751289139753:web:83e9bcb431c1a5ebfbd238"
     });
-
     const auth = getAuth(app);
     const db = getDatabase(app);
 
     let currentUser = null;
     let activeChat = null;
     let activeChatUnsub = null;
+    let conversationsUnsub = null;
 
+    // ── Auth guard ──
     onAuthStateChanged(auth, user => {
-        if (!user) {
-            window.location.href = 'authenticate.html';
-            return;
-        }
+        if (!user) { window.location.href = 'index.html'; return; }
         currentUser = user;
-        document.getElementById('chat-header').textContent = 'Signed in as ' + user.email;
-        loadUserChats();
+        loadConversations();
     });
 
-    function getChatID(a, b) {
-        return [a, b].sort().map(x => x.replace(/[.#$[\]]/g, '_')).join('--');
-    }
+    document.getElementById('logoutBtn').addEventListener('click', () =>
+        signOut(auth).then(() => window.location.href = 'index.html')
+    );
 
-    // Load previous chats from sidebar
-    async function loadUserChats() {
-        const list = document.getElementById('chatList');
-        list.innerHTML = '';
+    // ── Load saved conversations from DB ──
+    function loadConversations() {
+        const convRef = ref(db, 'conversations/' + currentUser.uid);
+        if (conversationsUnsub) conversationsUnsub();
 
-        try {
-            const usersSnap = await get(ref(db, 'users'));
-            if (!usersSnap.exists()) return;
+        conversationsUnsub = onValue(convRef, snap => {
+            const list = document.getElementById('chatList');
+            list.innerHTML = '';
 
-            // For simplicity we load all users and check which chats have messages
-            const allUsers = Object.values(usersSnap.val());
-            
-            for (const u of allUsers) {
-                if (u.email === currentUser.email) continue;
-                const chatID = getChatID(currentUser.email, u.email);
-                const chatSnap = await get(ref(db, 'chats/' + chatID));
-                
-                if (chatSnap.exists()) {
-                    addToChatList(u.email);
-                }
+            if (!snap.exists()) {
+                list.innerHTML = '<div class="no-chats">No conversations yet.</div>';
+                return;
             }
-        } catch (e) {
-            console.error("Failed to load chats", e);
-        }
+
+            // Sort by lastTimestamp descending
+            const convos = Object.entries(snap.val())
+                .sort((a, b) => (b[1].lastTimestamp || 0) - (a[1].lastTimestamp || 0));
+
+            convos.forEach(([key, data]) => {
+                renderChatEntry(data.email, data.lastMessage || '');
+            });
+
+            // Re-highlight active chat if one is open
+            if (activeChat) {
+                const el = document.querySelector(`.chat-entry[data-email="${activeChat}"]`);
+                if (el) el.classList.add('active');
+            }
+        });
     }
 
-    function addToChatList(email) {
+    function renderChatEntry(email, preview) {
         const list = document.getElementById('chatList');
+        // Remove no-chats placeholder if present
+        const placeholder = list.querySelector('.no-chats');
+        if (placeholder) placeholder.remove();
+
+        // Don't duplicate
         if (document.querySelector(`.chat-entry[data-email="${email}"]`)) return;
 
         const entry = document.createElement('div');
         entry.className = 'chat-entry';
         entry.setAttribute('data-email', email);
-        entry.textContent = email;
+        entry.innerHTML = `<span class="ce-email">${email}</span><span class="ce-preview">${preview}</span>`;
         entry.addEventListener('click', () => openChat(email));
-        list.prepend(entry);
+        list.appendChild(entry);
     }
 
-    function openChat(email) {
-        activeChat = email;
-        document.getElementById('chat-header').textContent = 'Chat with ' + email;
-
-        const msgInput = document.getElementById('msgInput');
-        msgInput.disabled = false;
-        msgInput.placeholder = `Message ${email}…`;
-        document.getElementById('sendBtn').disabled = false;
-        msgInput.focus();
-
-        document.querySelectorAll('.chat-entry').forEach(el => el.classList.remove('active'));
-        const activeEntry = document.querySelector(`.chat-entry[data-email="${email}"]`);
-        if (activeEntry) activeEntry.classList.add('active');
-
-        if (activeChatUnsub) activeChatUnsub();
-
-        const chatID = getChatID(currentUser.email, email);
-
-        activeChatUnsub = onValue(ref(db, 'chats/' + chatID), (snap) => {
-            const mBox = document.getElementById('messages');
-            mBox.innerHTML = '';
-
-            if (!snap.exists()) {
-                mBox.innerHTML = `<div class="empty-state"><p>No messages yet. Say hi! 👋</p></div>`;
-                return;
-            }
-
-            const messages = Object.values(snap.val())
-                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-            messages.forEach(m => {
-                const isSent = m.sender === currentUser.email;
-                const wrap = document.createElement('div');
-                wrap.className = `msg-wrap ${isSent ? 'sent' : 'received'}`;
-
-                const label = document.createElement('div');
-                label.className = 'msg-sender';
-                label.textContent = isSent ? 'You' : m.sender.split('@')[0];
-
-                const div = document.createElement('div');
-                div.className = 'msg';
-                div.textContent = m.text;
-
-                wrap.appendChild(label);
-                wrap.appendChild(div);
-                mBox.appendChild(wrap);
-            });
-
-            mBox.scrollTop = mBox.scrollHeight;
-        });
-    }
-
-    function sendMessage() {
-        const input = document.getElementById('msgInput');
-        const text = input.value.trim();
-        if (!text || !activeChat) return;
-
-        const chatID = getChatID(currentUser.email, activeChat);
-
-        push(ref(db, 'chats/' + chatID), {
-            sender: currentUser.email,
-            text: text,
-            timestamp: serverTimestamp()
-        });
-
-        input.value = '';
-    }
-
-    // Search
+    // ── Search ──
     let searchTimeout = null;
     document.getElementById('userSearch').addEventListener('input', e => {
         clearTimeout(searchTimeout);
         const q = e.target.value.toLowerCase().trim();
         const resDiv = document.getElementById('results');
-
-        if (q.length < 3) {
-            resDiv.style.display = 'none';
-            return;
-        }
+        if (q.length < 3) { resDiv.style.display = 'none'; resDiv.innerHTML = ''; return; }
 
         searchTimeout = setTimeout(async () => {
-            resDiv.innerHTML = '<div class="no-result">Searching...</div>';
+            resDiv.innerHTML = '';
             resDiv.style.display = 'block';
-
-            try {
-                const snap = await get(ref(db, 'users'));
-                if (!snap.exists()) {
-                    resDiv.innerHTML = '<div class="no-result">No users found.</div>';
-                    return;
-                }
-
-                const matches = Object.values(snap.val())
-                    .filter(u => u.email && u.email.toLowerCase().includes(q) && u.email !== currentUser?.email);
-
-                resDiv.innerHTML = '';
-
-                if (matches.length === 0) {
-                    resDiv.innerHTML = '<div class="no-result">No user found with that email.</div>';
-                    return;
-                }
-
-                matches.forEach(u => {
-                    const d = document.createElement('div');
-                    d.className = 'user-item';
-                    d.textContent = u.email;
-                    d.addEventListener('click', () => {
-                        resDiv.style.display = 'none';
-                        document.getElementById('userSearch').value = '';
-                        openChat(u.email);
-                        addToChatList(u.email);   // Add to sidebar immediately
-                    });
-                    resDiv.appendChild(d);
-                });
-            } catch (err) {
-                console.error(err);
-                resDiv.innerHTML = '<div class="no-result">Search failed.</div>';
+            const snap = await get(ref(db, 'users'));
+            if (!snap.exists()) { resDiv.innerHTML = '<div class="no-result">No users found.</div>'; return; }
+            const matches = Object.values(snap.val()).filter(u =>
+                u.email && u.email.includes(q) && u.email !== currentUser.email
+            );
+            if (matches.length === 0) {
+                resDiv.innerHTML = '<div class="no-result">No account with that email exists.</div>';
+                return;
             }
+            matches.forEach(u => {
+                const d = document.createElement('div');
+                d.className = 'user-item';
+                d.textContent = u.email;
+                d.addEventListener('click', () => {
+                    resDiv.style.display = 'none';
+                    document.getElementById('userSearch').value = '';
+                    openChat(u.email);
+                });
+                resDiv.appendChild(d);
+            });
         }, 250);
     });
 
+    // ── Chat helpers ──
+    function getChatID(a, b) {
+        return [a, b].sort().map(x => x.replace(/[.#$[\]]/g, '_')).join('--');
+    }
+
+    function openChat(email) {
+        activeChat = email;
+        document.getElementById('chat-header').textContent = 'Chat with ' + email;
+        const msgInput = document.getElementById('msgInput');
+        msgInput.disabled = false;
+        msgInput.placeholder = 'Message ' + email + '…';
+        document.getElementById('sendBtn').disabled = false;
+        msgInput.focus();
+
+        document.querySelectorAll('.chat-entry').forEach(el => el.classList.remove('active'));
+        const existing = document.querySelector(`.chat-entry[data-email="${email}"]`);
+        if (existing) existing.classList.add('active');
+
+        if (activeChatUnsub) activeChatUnsub();
+
+        const chatID = getChatID(currentUser.email, email);
+        activeChatUnsub = onValue(ref(db, 'chats/' + chatID), snap => {
+            const mBox = document.getElementById('messages');
+            mBox.innerHTML = '';
+            if (!snap.exists()) {
+                mBox.innerHTML = '<div class="empty-state"><p>No messages yet. Say hi! 👋</p></div>';
+                return;
+            }
+            Object.values(snap.val()).forEach(m => {
+                const isSent = m.sender === currentUser.email;
+                const wrap = document.createElement('div');
+                wrap.className = 'msg-wrap ' + (isSent ? 'sent' : 'received');
+                const label = document.createElement('div');
+                label.className = 'msg-sender';
+                label.textContent = isSent ? 'You' : m.sender;
+                const div = document.createElement('div');
+                div.className = 'msg';
+                div.textContent = m.text;
+                wrap.appendChild(label);
+                wrap.appendChild(div);
+                mBox.appendChild(wrap);
+            });
+            mBox.scrollTop = mBox.scrollHeight;
+        });
+    }
+
+    // ── Send message ──
+    async function sendMessage() {
+        const input = document.getElementById('msgInput');
+        const text = input.value.trim();
+        if (!text || !activeChat) return;
+
+        const chatID = getChatID(currentUser.email, activeChat);
+        const ts = Date.now();
+
+        // Push the message
+        await push(ref(db, 'chats/' + chatID), {
+            sender: currentUser.email,
+            text,
+            timestamp: serverTimestamp()
+        });
+
+        // Save conversation entry for BOTH users so it shows in both sidebars
+        const myConvoKey = activeChat.replace(/[.#$[\]]/g, '_');
+        const theirConvoKey = currentUser.email.replace(/[.#$[\]]/g, '_');
+
+        await set(ref(db, 'conversations/' + currentUser.uid + '/' + myConvoKey), {
+            email: activeChat,
+            lastMessage: text,
+            lastTimestamp: ts
+        });
+
+        // Find their UID to save on their side too
+        const usersSnap = await get(ref(db, 'users'));
+        if (usersSnap.exists()) {
+            const match = Object.values(usersSnap.val()).find(u => u.email === activeChat);
+            if (match) {
+                await set(ref(db, 'conversations/' + match.uid + '/' + theirConvoKey), {
+                    email: currentUser.email,
+                    lastMessage: text,
+                    lastTimestamp: ts
+                });
+            }
+        }
+
+        input.value = '';
+        input.focus();
+    }
+
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('msgInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        signOut(auth).then(() => window.location.href = 'authenticate.html');
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
 </script>
 </body>
