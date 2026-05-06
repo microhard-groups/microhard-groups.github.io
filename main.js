@@ -81,7 +81,7 @@ window.handleAuth = async () => {
                 uid: userCred.user.uid
             });
         }
-        window.location.href = "chat.html";
+        window.location.href = "maintenance.html";
     } catch (err) {
         // Show friendly error messages
         const errorMap = {
