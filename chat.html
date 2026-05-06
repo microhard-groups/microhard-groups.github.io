@@ -348,6 +348,7 @@ body {
   padding:12px 16px; border-top:1px solid var(--border);
   display:flex; flex-direction:column; gap:8px;
   background:rgba(22,21,20,0.85); backdrop-filter:blur(10px); flex-shrink:0;
+  position:relative;
 }
 .footer-row { display:flex; gap:8px; align-items:center; }
 .foot-btn {
@@ -783,15 +784,24 @@ body {
         <button class="ep-tab" data-cat="activities" title="Activities">⚽</button>
         <button class="ep-tab" data-cat="objects" title="Objects">💡</button>
         <button class="ep-tab" data-cat="symbols" title="Symbols">💯</button>
+        <button class="ep-tab" data-cat="gif" title="GIFs" id="gifTab">GIF</button>
       </div>
       <!-- Search -->
-      <div style="padding:8px 10px;border-bottom:1px solid var(--border);">
+      <div id="emojiSearchWrap" style="padding:8px 10px;border-bottom:1px solid var(--border);">
         <input id="emojiSearch" type="text" placeholder="Find the perfect emoji" style="width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:0.83rem;font-family:inherit;box-sizing:border-box;">
       </div>
       <!-- Category label -->
       <div id="emojiCatLabel" style="padding:6px 12px 2px;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);font-weight:600;">Frequently Used</div>
       <!-- Grid -->
       <div id="emojiGrid" style="display:flex;flex-wrap:wrap;gap:2px;padding:4px 8px 10px;max-height:220px;overflow-y:auto;"></div>
+      <!-- GIF panel -->
+      <div id="gifPanel" style="display:none;flex-direction:column;height:280px;">
+        <div style="padding:8px 10px;border-bottom:1px solid var(--border);">
+          <input id="gifSearch" type="text" placeholder="Search GIFs…" style="width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:0.83rem;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div id="gifGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px;overflow-y:auto;flex:1;"></div>
+        <div style="padding:4px 8px;font-size:0.65rem;color:var(--text-muted);text-align:right;">Powered by Tenor</div>
+      </div>
     </div>
     <!-- Input row -->
     <div class="footer-row">
@@ -1292,6 +1302,10 @@ body {
               <div class="settings-row-sub">Download a copy of your account data</div>
             </div>
             <div class="settings-row-right">
+              <button class="s-btn s-btn-secondary" id="exportDataBtn">Export JSON</button>
+            </div>
+          </div>
+            <div class="settings-row-right">
               <span style="font-size:0.78rem;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;">Coming Soon</span>
             </div>
           </div>
@@ -1405,6 +1419,37 @@ body {
 
 <!-- Image lightbox -->
 <div id="lightbox"><img id="lightbox-img" src="" alt=""></div>
+
+<!-- PROFILE MODAL -->
+<div id="profileModal" style="display:none;position:fixed;inset:0;z-index:820;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:#1a1918;border:1px solid var(--border);border-radius:18px;padding:28px;width:min(380px,90vw);box-shadow:0 24px 60px rgba(0,0,0,0.6);position:relative;">
+    <button id="closeProfileModal" style="position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;padding:4px 8px;border-radius:6px;">✕</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:20px;">
+      <div id="profileModalAvatar" style="width:80px;height:80px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;overflow:hidden;border:3px solid var(--border);"></div>
+      <div style="text-align:center;">
+        <div id="profileModalName" style="font-size:1.1rem;font-weight:700;"></div>
+        <div id="profileModalEmail" style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;"></div>
+        <div id="profileModalStatus" style="font-size:0.8rem;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:5px;"></div>
+      </div>
+    </div>
+    <!-- GC management section -->
+    <div id="gcManageSection" style="display:none;">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:10px;">Members</div>
+      <div id="gcMembersList" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+      <div id="gcOwnerActions" style="display:none;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="s-btn s-btn-secondary" id="gcAddMemberBtn" style="font-size:0.82rem;padding:7px 12px;">+ Add Member</button>
+        <button class="s-btn" id="gcChangePhotoBtn" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text-dim);font-size:0.82rem;padding:7px 12px;">Change Photo</button>
+        <input type="file" id="gcPhotoInput" accept="image/*" style="display:none;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;" id="profileModalActions">
+      <button class="s-btn s-btn-primary" id="profileModalMsgBtn">Message</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT ENTRY CONTEXT MENU -->
+<div id="chatCtxMenu" style="display:none;position:fixed;background:#252320;border:1px solid var(--border);border-radius:12px;padding:6px;z-index:1000;box-shadow:0 12px 40px rgba(0,0,0,0.6);min-width:170px;"></div>
 
 <script type="module">
 import { initializeApp } from 'https://esm.sh/firebase/app';
@@ -1525,8 +1570,9 @@ document.getElementById('saveProfileBtn').addEventListener('click', async () => 
   const name = document.getElementById('usernameInput').value.trim();
   const st = document.getElementById('profileStatus');
   if (!name) { st.style.color='#f87171'; st.textContent = 'Name cannot be empty.'; return; }
-  await update(ref(db, 'users/' + currentUser.uid), { username: name });
+  await update(ref(db, 'users/' + currentUser.uid), { username: name, updatedAt: Date.now() });
   currentUsername = name;
+  bustUserCache(currentUser.email);
   st.style.color = '#4ade80'; st.textContent = '✓ Saved!';
   updateSidebarUser();
   setTimeout(() => { st.textContent = ''; }, 2000);
@@ -1548,13 +1594,15 @@ document.getElementById('pfpFileInput').addEventListener('change', async e => {
   e.target.value = '';
   const compressed = await compressImage(file, 300, 0.8);
   currentPhotoURL = compressed;
-  await update(ref(db, 'users/' + currentUser.uid), { photoURL: compressed });
+  await update(ref(db, 'users/' + currentUser.uid), { photoURL: compressed, updatedAt: Date.now() });
+  bustUserCache(currentUser.email);
   loadSettingsPfp();
   updateSidebarUser();
 });
 document.getElementById('pfpRemoveBtn').addEventListener('click', async () => {
   currentPhotoURL = '';
-  await update(ref(db, 'users/' + currentUser.uid), { photoURL: '' });
+  await update(ref(db, 'users/' + currentUser.uid), { photoURL: '', updatedAt: Date.now() });
+  bustUserCache(currentUser.email);
   loadSettingsPfp();
   updateSidebarUser();
 });
@@ -1657,6 +1705,7 @@ document.getElementById('saveStatusBtn').addEventListener('click', async () => {
 // ══════════════════════════════════════════════════════
 function loadConversations() {
   if (conversationsUnsub) conversationsUnsub();
+  const pendingRenders = new Set();
   conversationsUnsub = onValue(ref(db, 'conversations/' + currentUser.uid), async snap => {
     const list = document.getElementById('chatList');
     if (!snap.exists()) { list.innerHTML = '<div class="no-chats">No conversations yet.</div>'; return; }
@@ -1668,22 +1717,28 @@ function loadConversations() {
     for (const [, data] of entries) {
       const id = data.groupID || data.email;
       if (!id) continue;
-      const existing = list.querySelector(`.chat-entry[data-id="${id}"]`);
+      const existing = list.querySelector(`.chat-entry[data-id="${CSS.escape(id)}"]`);
       if (existing) {
+        // Update preview text and name
         const prev = existing.querySelector('.ce-preview');
         if (prev) prev.textContent = data.lastMessage || '';
-      } else {
-        await renderChatEntry(data);
+        if (data.groupID && data.groupName) {
+          const nameEl = existing.querySelector('.ce-name');
+          if (nameEl) nameEl.firstChild.textContent = data.groupName;
+        }
+      } else if (!pendingRenders.has(id)) {
+        pendingRenders.add(id);
+        renderChatEntry(data).finally(() => pendingRenders.delete(id));
       }
     }
     // Re-sort DOM order
     entries.forEach(([,data]) => {
       const id = data.groupID || data.email;
-      const el = list.querySelector(`.chat-entry[data-id="${id}"]`);
+      const el = list.querySelector(`.chat-entry[data-id="${CSS.escape(id)}"]`);
       if (el) list.appendChild(el);
     });
     if (activeChat) {
-      document.querySelector(`.chat-entry[data-id="${activeChat}"]`)?.classList.add('active');
+      document.querySelector(`.chat-entry[data-id="${CSS.escape(activeChat)}"]`)?.classList.add('active');
     }
   });
 }
@@ -1693,7 +1748,7 @@ async function renderChatEntry(data) {
   list.querySelector('.no-chats')?.remove();
   const id = data.groupID || data.email;
   if (!id) return;
-  if (document.querySelector(`.chat-entry[data-id="${id}"]`)) return;
+  if (document.querySelector(`.chat-entry[data-id="${CSS.escape(id)}"]`)) return;
 
   const entry = document.createElement('div');
   entry.className = 'chat-entry';
@@ -1756,6 +1811,19 @@ async function renderChatEntry(data) {
     if (data.groupID) openGroupChat(data.groupID, data.groupName || 'Group');
     else openChat(data.email);
   });
+
+  // Right-click context menu on chat entries
+  entry.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    showChatEntryCtxMenu(e, data);
+  });
+
+  // Clicking avatar opens profile
+  av.addEventListener('click', e => {
+    e.stopPropagation();
+    openProfileModal(data);
+  });
+
   list.appendChild(entry);
 }
 
@@ -1810,9 +1878,9 @@ async function getDisplayName(email) {
   const snap = await get(ref(db,'users'));
   if (snap.exists()) {
     const m = Object.values(snap.val()).find(u => u.email === email);
-    if (m) return { name: m.username || email, photo: m.photoURL || '', status: m.status || 'offline', statusText: m.statusText || '' };
+    if (m) return { name: m.username || email.split('@')[0], photo: m.photoURL || '', status: m.status || 'offline', statusText: m.statusText || '' };
   }
-  return { name: email, photo:'', status:'offline', statusText:'' };
+  return { name: email.split('@')[0], photo:'', status:'offline', statusText:'' };
 }
 
 async function openChat(email) {
@@ -1838,7 +1906,7 @@ async function openChat(email) {
   msgInput.focus();
 
   const chatID = getChatID(currentUser.email, email);
-  listenToChat(chatID, false);
+  listenToChat('chats/' + chatID, false);
 
   // Add to conversation if not there
   const myKey = email.replace(/[.#$[\]]/g,'_');
@@ -1988,7 +2056,7 @@ function listenToChat(chatPath, isGroup) {
   let renderedKeys = new Set();
   let lastDate = null;
 
-  activeChatUnsub = onValue(ref(db, (isGroup ? '' : 'chats/') + chatPath), async snap => {
+  activeChatUnsub = onValue(ref(db, chatPath), async snap => {
     if (!snap.exists()) {
       mBox.innerHTML = '<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>No messages yet. Say hi! 👋</p></div>';
       initialized = true;
@@ -2076,8 +2144,8 @@ async function renderMessage(mBox, key, m, msgMap, chatPath, isGroup, lastDate, 
   const col = document.createElement('div');
   col.className = 'msg-col';
 
-  // Sender name (in groups or received)
-  if (!isSent) {
+  // Sender name (in groups only, not DMs)
+  if (!isSent && activeChatIsGroup) {
     const sn = document.createElement('div');
     sn.className = 'msg-sender-name';
     sn.textContent = senderInfo.name;
@@ -2126,6 +2194,17 @@ async function renderMessage(mBox, key, m, msgMap, chatPath, isGroup, lastDate, 
     img.src = m.imageData;
     img.alt = 'image';
     img.addEventListener('click', () => openLightbox(m.imageData));
+    bub.appendChild(img);
+  } else if (m.gifUrl) {
+    const img = document.createElement('img');
+    img.src = m.gifUrl;
+    img.alt = 'GIF';
+    img.style.maxWidth = '240px';
+    img.style.maxHeight = '180px';
+    img.style.borderRadius = '10px';
+    img.style.display = 'block';
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', () => openLightbox(m.gifUrl));
     bub.appendChild(img);
   } else if (m.fileData) {
     const a = document.createElement('a');
@@ -2204,9 +2283,17 @@ async function getSenderInfo(email) {
   const snap = await get(ref(db,'users'));
   if (snap.exists()) {
     const m = Object.values(snap.val()).find(u => u.email === email);
-    if (m) { userCache[email] = { name: m.username || email, photo: m.photoURL || '' }; return userCache[email]; }
+    if (m) {
+      const displayName = m.username || email.split('@')[0];
+      userCache[email] = { name: displayName, photo: m.photoURL || '', uid: m.uid };
+      return userCache[email];
+    }
   }
-  return { name: email, photo: '' };
+  return { name: email.split('@')[0], photo: '' };
+}
+
+function bustUserCache(email) {
+  if (email && userCache[email]) delete userCache[email];
 }
 
 async function makeAvatar(email, info) {
@@ -2261,7 +2348,7 @@ function showReactionPicker(e, chatPath, key) {
 }
 
 async function toggleReaction(chatPath, key, emoji) {
-  const reactionPath = (activeChatIsGroup ? '' : 'chats/') + chatPath + '/' + key + '/reactions/' + currentUser.uid;
+  const reactionPath = chatPath + '/' + key + '/reactions/' + currentUser.uid;
   const snap = await get(ref(db, reactionPath));
   if (snap.exists() && snap.val() === emoji) {
     await remove(ref(db, reactionPath));
@@ -2313,8 +2400,7 @@ document.addEventListener('click', hideCtxMenu);
 document.addEventListener('keydown', e => { if(e.key==='Escape'){hideCtxMenu();clearReply();} });
 
 async function deleteMsg(key, chatPath) {
-  const fullPath = (activeChatIsGroup ? '' : 'chats/') + chatPath + '/' + key;
-  await update(ref(db, fullPath), { deleted:true, text:'' });
+  await update(ref(db, chatPath + '/' + key), { deleted:true, text:'' });
 }
 
 function startEdit(key, currentText, chatPath) {
@@ -2329,8 +2415,7 @@ function startEdit(key, currentText, chatPath) {
     if (e.key === 'Enter') {
       const newText = inp.value.trim();
       if (!newText) return;
-      const fullPath = (activeChatIsGroup ? '' : 'chats/') + chatPath + '/' + key;
-      await update(ref(db, fullPath), { text: newText, edited: true });
+      await update(ref(db, chatPath + '/' + key), { text: newText, edited: true });
     }
     if (e.key === 'Escape') { inp.value = currentText; bubble.textContent = currentText; }
   });
@@ -2398,18 +2483,20 @@ document.getElementById('emojiToggleBtn').addEventListener('click', e => {
   const picker = document.getElementById('discordEmojiPicker');
   const isVisible = picker.style.display !== 'none';
   picker.style.display = isVisible ? 'none' : 'flex';
-  if (!isVisible) buildEmojiGrid('frequent');
+  if (!isVisible) {
+    // Reset to emoji mode (not GIF)
+    document.getElementById('gifPanel').style.display = 'none';
+    document.getElementById('emojiSearchWrap').style.display = '';
+    document.getElementById('emojiCatLabel').style.display = '';
+    document.getElementById('emojiGrid').style.display = 'flex';
+    document.querySelectorAll('.ep-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === (currentEmojiCat||'frequent')));
+    buildEmojiGrid(currentEmojiCat || 'frequent');
+  }
 });
 
-document.querySelectorAll('.ep-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.ep-tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    currentEmojiCat = tab.dataset.cat;
-    document.getElementById('emojiSearch').value = '';
-    buildEmojiGrid(currentEmojiCat);
-  });
-});
+// (ep-tab click handling is done in GIF PICKER section above)
+// dummy reference to avoid linter issues
+void 0;
 
 document.getElementById('emojiSearch').addEventListener('input', e => {
   buildEmojiGrid(currentEmojiCat, e.target.value.trim());
@@ -2577,14 +2664,12 @@ async function pushMessage(data, previewText) {
   if (replyTo) { data.replyTo = replyTo.key; clearReply(); }
 
   if (activeChatIsGroup) {
-    // Group message
     const chatPath = 'groups/' + activeChat + '/messages';
     await push(ref(db, chatPath), data);
-    // Update last message for all members
     const groupSnap = await get(ref(db, 'groups/' + activeChat));
     if (groupSnap.exists()) {
       const group = groupSnap.val();
-      const senderName = currentUsername || currentUser.email;
+      const senderName = currentUsername || currentUser.email.split('@')[0];
       const preview = data.text ? `${senderName}: ${data.text}` : `${senderName}: [image]`;
       if (group.members) {
         for (const uid of Object.keys(group.members)) {
@@ -2598,13 +2683,12 @@ async function pushMessage(data, previewText) {
       }
     }
   } else {
-    // DM
     const chatID = getChatID(currentUser.email, activeChat);
     await push(ref(db, 'chats/' + chatID), data);
     const ts = Date.now();
     const myKey = activeChat.replace(/[.#$[\]]/g,'_');
     const theirKey = currentUser.email.replace(/[.#$[\]]/g,'_');
-    const myName = currentUsername || currentUser.email;
+    const myName = currentUsername || currentUser.email.split('@')[0];
     const preview = previewText;
 
     await update(ref(db, 'conversations/' + currentUser.uid + '/' + myKey), {
@@ -2638,8 +2722,361 @@ document.getElementById('msgInput').addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════════════
-// CALLS
+// GIF PICKER (Tenor)
 // ══════════════════════════════════════════════════════
+const TENOR_KEY = 'AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo'; // reuse firebase key as placeholder - use real tenor key
+let gifSearchTimeout = null;
+
+async function fetchGifs(q) {
+  const grid = document.getElementById('gifGrid');
+  grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;padding:12px;grid-column:span 2;text-align:center;">Loading…</div>';
+  try {
+    // Use Tenor v2 API
+    const term = encodeURIComponent(q || 'trending');
+    const endpoint = q
+      ? `https://tenor.googleapis.com/v2/search?q=${term}&key=AIzaSyC9JFbZv-YwkwXnV0QJwPgT8p8RYoTDUkU&limit=20&media_filter=gif`
+      : `https://tenor.googleapis.com/v2/featured?key=AIzaSyC9JFbZv-YwkwXnV0QJwPgT8p8RYoTDUkU&limit=20&media_filter=gif`;
+    const res = await fetch(endpoint);
+    if (!res.ok) throw new Error('Tenor API error');
+    const data = await res.json();
+    grid.innerHTML = '';
+    if (!data.results || !data.results.length) {
+      grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;padding:12px;grid-column:span 2;text-align:center;">No GIFs found</div>';
+      return;
+    }
+    data.results.forEach(r => {
+      const gif = r.media_formats?.gif || r.media_formats?.tinygif;
+      if (!gif) return;
+      const img = document.createElement('img');
+      img.src = gif.url;
+      img.style.cssText = 'width:100%;border-radius:6px;cursor:pointer;object-fit:cover;max-height:80px;';
+      img.loading = 'lazy';
+      img.addEventListener('click', () => {
+        sendGif(gif.url);
+        document.getElementById('discordEmojiPicker').style.display = 'none';
+      });
+      grid.appendChild(img);
+    });
+  } catch(err) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;padding:12px;grid-column:span 2;text-align:center;">Could not load GIFs</div>';
+  }
+}
+
+async function sendGif(url) {
+  if (!activeChat) return;
+  await pushMessage({ sender:currentUser.email, timestamp:serverTimestamp(), gifUrl:url }, '[GIF]');
+}
+
+document.getElementById('gifSearch').addEventListener('input', e => {
+  clearTimeout(gifSearchTimeout);
+  gifSearchTimeout = setTimeout(() => fetchGifs(e.target.value.trim()), 400);
+});
+
+// Patch ep-tab click to handle GIF tab
+document.querySelectorAll('.ep-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ep-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const cat = tab.dataset.cat;
+    const emojiSearchWrap = document.getElementById('emojiSearchWrap');
+    const catLabel = document.getElementById('emojiCatLabel');
+    const emojiGrid = document.getElementById('emojiGrid');
+    const gifPanel = document.getElementById('gifPanel');
+    if (cat === 'gif') {
+      if (emojiSearchWrap) emojiSearchWrap.style.display = 'none';
+      catLabel.style.display = 'none';
+      emojiGrid.style.display = 'none';
+      gifPanel.style.display = 'flex';
+      fetchGifs('');
+    } else {
+      if (emojiSearchWrap) emojiSearchWrap.style.display = '';
+      catLabel.style.display = '';
+      emojiGrid.style.display = 'flex';
+      gifPanel.style.display = 'none';
+      currentEmojiCat = cat;
+      document.getElementById('emojiSearch').value = '';
+      buildEmojiGrid(currentEmojiCat);
+    }
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// RENDER GIF IN MESSAGES
+// ══════════════════════════════════════════════════════
+// Patch renderMessage to handle gifUrl
+const _origRenderMsg = renderMessage;
+
+// ══════════════════════════════════════════════════════
+// PROFILE MODAL
+// ══════════════════════════════════════════════════════
+let profileModalData = null;
+
+async function openProfileModal(data) {
+  profileModalData = data;
+  const modal = document.getElementById('profileModal');
+  const av = document.getElementById('profileModalAvatar');
+  const nameEl = document.getElementById('profileModalName');
+  const emailEl = document.getElementById('profileModalEmail');
+  const statusEl = document.getElementById('profileModalStatus');
+  const gcSection = document.getElementById('gcManageSection');
+  const gcList = document.getElementById('gcMembersList');
+  const gcOwnerActions = document.getElementById('gcOwnerActions');
+  const actions = document.getElementById('profileModalActions');
+
+  gcSection.style.display = 'none';
+  actions.style.display = 'flex';
+  gcOwnerActions.style.display = 'none';
+
+  if (data.groupID) {
+    // Group profile
+    const groupSnap = await get(ref(db, 'groups/' + data.groupID));
+    const group = groupSnap.exists() ? groupSnap.val() : {};
+    const name = group.name || data.groupName || 'Group';
+    nameEl.textContent = name;
+    emailEl.textContent = `${Object.keys(group.members||{}).length} members`;
+    statusEl.innerHTML = '';
+
+    if (group.photoURL) {
+      av.innerHTML = `<img src="${group.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+      av.innerHTML = `<span style="font-size:1.8rem;">👥</span>`;
+      av.style.background = stringToColor(name);
+    }
+
+    // Members list
+    gcSection.style.display = 'block';
+    gcList.innerHTML = '';
+    const isOwner = group.createdBy === currentUser.uid;
+    if (isOwner) gcOwnerActions.style.display = 'flex';
+
+    if (group.members) {
+      const usersSnap = await get(ref(db, 'users'));
+      const allUsers = usersSnap.exists() ? usersSnap.val() : {};
+      for (const uid of Object.keys(group.members)) {
+        const u = Object.values(allUsers).find(x => x.uid === uid) || allUsers[uid];
+        if (!u) continue;
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;';
+        const isYou = uid === currentUser.uid;
+        const isCreator = uid === group.createdBy;
+        const uName = u.username || u.email.split('@')[0];
+        row.innerHTML = `
+          <div style="width:30px;height:30px;border-radius:50%;background:${stringToColor(u.email||uid)};display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;overflow:hidden;">
+            ${u.photoURL ? `<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : uName[0].toUpperCase()}
+          </div>
+          <div style="flex:1;font-size:0.88rem;">${esc(uName)}</div>
+          ${isCreator ? '<span style="font-size:0.7rem;color:var(--accent);background:rgba(91,95,199,0.15);padding:2px 7px;border-radius:4px;">owner</span>' : ''}
+          ${isOwner && !isYou && !isCreator ? `<button data-uid="${uid}" class="gc-remove-btn" style="background:transparent;border:none;color:#f87171;cursor:pointer;font-size:0.8rem;padding:3px 7px;border-radius:5px;border:1px solid rgba(248,113,113,0.3);">Remove</button>` : ''}
+        `;
+        gcList.appendChild(row);
+      }
+      gcList.querySelectorAll('.gc-remove-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const uid = btn.dataset.uid;
+          if (!confirm('Remove this member?')) return;
+          await remove(ref(db, 'groups/' + data.groupID + '/members/' + uid));
+          await remove(ref(db, 'conversations/' + uid + '/group_' + data.groupID));
+          openProfileModal(data); // refresh
+        });
+      });
+    }
+
+    // Change group photo
+    document.getElementById('gcChangePhotoBtn').onclick = () => document.getElementById('gcPhotoInput').click();
+    document.getElementById('gcPhotoInput').onchange = async e => {
+      const file = e.target.files[0]; if (!file) return;
+      e.target.value = '';
+      const compressed = await compressImage(file, 300, 0.8);
+      await update(ref(db, 'groups/' + data.groupID), { photoURL: compressed });
+      // Update in all members' conversations
+      const gSnap = await get(ref(db, 'groups/' + data.groupID));
+      const g = gSnap.val();
+      if (g.members) {
+        for (const uid of Object.keys(g.members)) {
+          await update(ref(db, 'conversations/' + uid + '/group_' + data.groupID), { groupPhoto: compressed });
+        }
+      }
+      openProfileModal(data);
+    };
+
+    // Add member button
+    document.getElementById('gcAddMemberBtn').onclick = () => {
+      modal.style.display = 'none';
+      document.getElementById('groupModal').classList.add('visible');
+    };
+
+    actions.innerHTML = `<button class="s-btn" style="background:#3a1010;color:#f87171;border:1px solid #5a1a1a;" id="leaveGroupBtn">Leave Group</button>`;
+    document.getElementById('leaveGroupBtn').addEventListener('click', async () => {
+      if (!confirm('Leave this group?')) return;
+      await remove(ref(db, 'groups/' + data.groupID + '/members/' + currentUser.uid));
+      await remove(ref(db, 'conversations/' + currentUser.uid + '/group_' + data.groupID));
+      modal.style.display = 'none';
+      activeChat = null; activeChatIsGroup = false;
+      document.getElementById('messages').innerHTML = '<div class="empty-state"><p>Select a conversation</p></div>';
+      document.getElementById('chat-header-name').textContent = 'Select a conversation';
+      document.getElementById('msgInput').disabled = true;
+    });
+  } else {
+    // DM profile
+    const email = data.email;
+    const info = await getDisplayName(email);
+    const uName = info.name !== email ? info.name : email.split('@')[0];
+    nameEl.textContent = uName;
+    emailEl.textContent = email;
+    const statusColors = { online:'#22c55e', idle:'#f59e0b', dnd:'#ef4444', offline:'#6b7280' };
+    const statusLabels = { online:'Online', idle:'Idle', dnd:'Do Not Disturb', offline:'Offline' };
+    statusEl.innerHTML = `<div style="width:8px;height:8px;border-radius:50%;background:${statusColors[info.status]||'#6b7280'};"></div>${statusLabels[info.status]||'Offline'}${info.statusText ? ' — ' + esc(info.statusText) : ''}`;
+
+    if (info.photo) {
+      av.innerHTML = `<img src="${info.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+      av.innerHTML = uName[0].toUpperCase();
+      av.style.background = stringToColor(email);
+    }
+    actions.innerHTML = `<button class="s-btn s-btn-primary" id="profileModalMsgBtn">Message</button>`;
+    document.getElementById('profileModalMsgBtn').addEventListener('click', () => {
+      modal.style.display = 'none';
+      openChat(email);
+    });
+  }
+
+  modal.style.display = 'flex';
+}
+
+document.getElementById('closeProfileModal').addEventListener('click', () => {
+  document.getElementById('profileModal').style.display = 'none';
+});
+document.getElementById('profileModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('profileModal')) document.getElementById('profileModal').style.display = 'none';
+});
+
+// Make header avatar clickable too
+document.getElementById('header-avatar').style.cursor = 'pointer';
+document.getElementById('header-avatar').addEventListener('click', () => {
+  if (!activeChat) return;
+  if (activeChatIsGroup) openProfileModal({ groupID: activeChat });
+  else openProfileModal({ email: activeChat });
+});
+
+// ══════════════════════════════════════════════════════
+// CHAT ENTRY CONTEXT MENU
+// ══════════════════════════════════════════════════════
+function showChatEntryCtxMenu(e, data) {
+  const menu = document.getElementById('chatCtxMenu');
+  menu.innerHTML = '';
+  const isGroup = !!data.groupID;
+
+  const addItem = (icon, label, cb, danger=false) => {
+    const item = document.createElement('div');
+    item.className = 'ctx-item' + (danger?' danger':'');
+    item.innerHTML = `${icon}<span>${label}</span>`;
+    item.addEventListener('click', () => { menu.style.display='none'; cb(); });
+    menu.appendChild(item);
+  };
+
+  addItem(`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`, 'View Profile', () => openProfileModal(data));
+
+  if (isGroup) {
+    addItem(`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`, 'Open Chat', () => openGroupChat(data.groupID, data.groupName || 'Group'));
+    menu.appendChild(Object.assign(document.createElement('div'),{className:'ctx-sep'}));
+    addItem(`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`, 'Leave Group', async () => {
+      if (!confirm('Leave this group?')) return;
+      await remove(ref(db, 'groups/' + data.groupID + '/members/' + currentUser.uid));
+      await remove(ref(db, 'conversations/' + currentUser.uid + '/group_' + data.groupID));
+      if (activeChat === data.groupID) {
+        activeChat = null; activeChatIsGroup = false;
+        document.getElementById('messages').innerHTML = '<div class="empty-state"><p>Select a conversation</p></div>';
+        document.getElementById('chat-header-name').textContent = 'Select a conversation';
+        document.getElementById('msgInput').disabled = true;
+      }
+    }, true);
+  } else {
+    addItem(`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`, 'Open Chat', () => openChat(data.email));
+    menu.appendChild(Object.assign(document.createElement('div'),{className:'ctx-sep'}));
+    addItem(`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`, 'Remove Conversation', async () => {
+      if (!confirm('Remove this conversation?')) return;
+      const myKey = data.email.replace(/[.#$[\]]/g,'_');
+      await remove(ref(db, 'conversations/' + currentUser.uid + '/' + myKey));
+      if (activeChat === data.email) {
+        activeChat = null; activeChatIsGroup = false;
+        document.getElementById('messages').innerHTML = '<div class="empty-state"><p>Select a conversation</p></div>';
+        document.getElementById('chat-header-name').textContent = 'Select a conversation';
+        document.getElementById('msgInput').disabled = true;
+      }
+    }, true);
+  }
+
+  menu.style.display = 'block';
+  const x = Math.min(e.clientX, window.innerWidth - 190);
+  const y = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 10);
+  menu.style.left = x+'px'; menu.style.top = y+'px';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#chatCtxMenu')) document.getElementById('chatCtxMenu').style.display = 'none';
+});
+
+// ══════════════════════════════════════════════════════
+// SETTINGS — WORKING IMPLEMENTATIONS
+// ══════════════════════════════════════════════════════
+
+// Notifications
+document.getElementById('notifToggle').addEventListener('change', e => {
+  localStorage.setItem('groups_notif', e.target.checked ? '1' : '0');
+  if (e.target.checked && Notification.permission === 'default') Notification.requestPermission();
+});
+document.getElementById('soundToggle').addEventListener('change', e => localStorage.setItem('groups_sound', e.target.checked ? '1' : '0'));
+document.getElementById('groupNotifToggle').addEventListener('change', e => localStorage.setItem('groups_group_notif', e.target.checked ? '1' : '0'));
+document.getElementById('badgeToggle').addEventListener('change', e => localStorage.setItem('groups_badge', e.target.checked ? '1' : '0'));
+document.getElementById('dndToggle').addEventListener('change', e => localStorage.setItem('groups_dnd', e.target.checked ? '1' : '0'));
+
+// Accessibility
+document.getElementById('reduceMotionToggle').addEventListener('change', e => {
+  document.documentElement.style.setProperty('--anim-dur', e.target.checked ? '0s' : '');
+  localStorage.setItem('groups_reduce_motion', e.target.checked ? '1' : '0');
+});
+document.getElementById('autoGifToggle').addEventListener('change', e => localStorage.setItem('groups_auto_gif', e.target.checked ? '1' : '0'));
+document.getElementById('compactToggle').addEventListener('change', e => {
+  document.getElementById('messages').style.gap = e.target.checked ? '0px' : '2px';
+  localStorage.setItem('groups_compact', e.target.checked ? '1' : '0');
+});
+
+// Privacy toggles (save to DB)
+document.getElementById('readReceiptsToggle').addEventListener('change', async e => {
+  if (currentUser) await update(ref(db, 'users/' + currentUser.uid), { readReceipts: e.target.checked });
+});
+document.getElementById('showStatusToggle').addEventListener('change', async e => {
+  if (currentUser) await update(ref(db, 'users/' + currentUser.uid), { showStatus: e.target.checked });
+});
+document.getElementById('lastSeenToggle').addEventListener('change', async e => {
+  if (currentUser) await update(ref(db, 'users/' + currentUser.uid), { showLastSeen: e.target.checked });
+});
+
+// Load notification prefs
+(function loadNotifPrefs() {
+  const notifVal = localStorage.getItem('groups_notif');
+  if (notifVal === '0') document.getElementById('notifToggle').checked = false;
+  const soundVal = localStorage.getItem('groups_sound');
+  if (soundVal === '0') document.getElementById('soundToggle').checked = false;
+  const compactVal = localStorage.getItem('groups_compact');
+  if (compactVal === '1') document.getElementById('compactToggle').checked = true;
+})();
+
+// Export data
+document.getElementById('exportDataBtn')?.addEventListener('click', async () => {
+  if (!currentUser) return;
+  const snap = await get(ref(db, 'users/' + currentUser.uid));
+  const convSnap = await get(ref(db, 'conversations/' + currentUser.uid));
+  const exportData = {
+    profile: snap.val(),
+    conversations: convSnap.val(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'groups-data.json'; a.click();
+  URL.revokeObjectURL(url);
+});
 document.getElementById('audioCallBtn').addEventListener('click', () => startCall(false));
 document.getElementById('videoCallBtn').addEventListener('click', () => startCall(true));
 
