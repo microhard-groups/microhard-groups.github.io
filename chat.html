@@ -1027,66 +1027,86 @@ function loadConvs() {
   if (convUnsub) off(ref(db, 'conversations/' + me.uid));
   convUnsub = onValue(ref(db, 'conversations/' + me.uid), snap => {
     const list = document.getElementById('chatList');
+
     if (!snap.exists()) { list.innerHTML = '<div class="no-chats">No conversations yet.</div>'; return; }
 
-    const data = snap.val();
-    const entries = Object.entries(data).sort((a,b) => (b[1].lastTimestamp||0) - (a[1].lastTimestamp||0));
+    const _sv = snap.val();
+    const entries = Object.entries(_sv).sort((a,b) => (b[1].lastTimestamp||0) - (a[1].lastTimestamp||0));
 
-    // Remove DOM entries deleted from DB
-    list.querySelectorAll('.chat-entry').forEach(el => { if (!data[el.dataset.id]) el.remove(); });
+    // Remove DOM entries deleted from DB; clear no-chats placeholder
+    list.querySelectorAll('.chat-entry').forEach(el => { if (!_sv[el.dataset.id]) el.remove(); });
     list.querySelector('.no-chats')?.remove();
 
-    entries.forEach(([key, conv]) => {
-      convCache[key] = conv;
-      const existing = list.querySelector(`.chat-entry[data-id="${key}"]`);
+    entries.forEach(([key, data]) => {
+      convCache[key] = data;
+
+      const existing = list.querySelector(`.chat-entry[data-id="${CSS.escape(key)}"]`);
       if (existing) {
+        // Only update preview text — never recreate, never reorder mid-loop
         const prev = existing.querySelector('.ce-preview');
-        if (prev) prev.textContent = conv.lastMessage || '';
+        if (prev && data.lastMessage !== undefined) prev.textContent = data.lastMessage;
         return;
       }
+
       const entry = document.createElement('div');
       entry.className = 'chat-entry';
       entry.dataset.id = key;
-      entry.dataset.type = conv.type || 'dm';
+      entry.dataset.type = data.type || 'dm';
+
+      // Fill avatar placeholder (async)
       const avDiv = document.createElement('div');
       avDiv.className = 'avatar';
       avDiv.style.cssText = 'width:38px;height:38px;font-size:0.8rem;flex-shrink:0';
-      const info = document.createElement('div'); info.className = 'ce-info';
-      const nameEl = document.createElement('div'); nameEl.className = 'ce-name';
-      const prevEl = document.createElement('div'); prevEl.className = 'ce-preview';
-      nameEl.textContent = conv.name || conv.email || key;
-      prevEl.textContent = conv.lastMessage || '';
-      info.appendChild(nameEl); info.appendChild(prevEl);
-      entry.appendChild(avDiv); entry.appendChild(info);
-      entry.addEventListener('contextmenu', e => { e.preventDefault(); showConvCtxMenu(e, key, conv); });
-      entry.addEventListener('click', () => openChat(key, conv.type || 'dm'));
+
+      const info = document.createElement('div');
+      info.className = 'ce-info';
+      info.innerHTML = `<div class="ce-name">${esc(data.name || data.email || key)}</div><div class="ce-preview">${esc(data.lastMessage || '')}</div>`;
+
+      entry.appendChild(avDiv);
+      entry.appendChild(info);
       list.appendChild(entry);
+
+      // Load avatar async without blocking render
       (async () => {
-        let name = conv.name || conv.email || key;
+        let name = data.name || data.email || key;
         let avSrc = null, status = null;
-        if (conv.type !== 'group' && conv.uid) {
-          const p = await getCachedUser(conv.uid);
+        if (data.type !== 'group' && data.uid) {
+          const p = await getCachedUser(data.uid);
           name = p?.username || p?.email || name;
           avSrc = p?.avatar; status = p?.status;
-          nameEl.textContent = name;
-        } else if (conv.type === 'group') {
-          const gs = await get(ref(db, `groupChats/${key}`));
-          if (gs.exists()) {
-            if (gs.val().avatar) avSrc = gs.val().avatar;
-            if (gs.val().name) { name = gs.val().name; nameEl.textContent = name; }
+          entry.querySelector('.ce-name').textContent = name;
+        } else if (data.type === 'group') {
+          const _ggs = await get(ref(db, `groupChats/${key}`));
+          if (_ggs.exists()) {
+            if (_ggs.val().avatar) avSrc = _ggs.val().avatar;
+            if (_ggs.val().name) { name = _ggs.val().name; entry.querySelector('.ce-name').textContent = name; }
           }
         }
         renderAv(avDiv, name, avSrc, status, '#1a1918');
       })();
+
+      // Right-click on chat entry
+      entry.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        showConvCtxMenu(e, key, data);
+      });
+
+      entry.addEventListener('click', () => openChat(key, data.type || 'dm'));
+
+      if (list.querySelector('.no-chats')) list.querySelector('.no-chats').remove();
     });
 
-    // Re-sort by timestamp
-    [...list.querySelectorAll('.chat-entry')]
-      .sort((a,b) => (convCache[b.dataset.id]?.lastTimestamp||0) - (convCache[a.dataset.id]?.lastTimestamp||0))
-      .forEach(el => list.appendChild(el));
+    // Re-sort DOM in timestamp order (once, after all entries processed)
+    const sorted = [...list.querySelectorAll('.chat-entry')].sort((a,b)=>{
+      const at = convCache[a.dataset.id]?.lastTimestamp || 0;
+      const bt = convCache[b.dataset.id]?.lastTimestamp || 0;
+      return bt - at;
+    });
+    sorted.forEach(el => list.appendChild(el));
 
-    if (activeKey) list.querySelector(`.chat-entry[data-id="${activeKey}"]`)?.classList.add('active');
-  });;
+    // Re-highlight active
+    if (activeKey) list.querySelector(`.chat-entry[data-id="${CSS.escape(activeKey)}"]`)?.classList.add('active');
+  });
 }
 
 // ─── Conversation right-click menu ───
@@ -1174,11 +1194,10 @@ async function openChat(key, type) {
   activeKey = key; activeType = type;
   lastRenderedKeys = [];
 
-  // Always fetch conv from DB as fallback if not yet in cache
   let conv = convCache[key];
   if (!conv) {
-    const snap = await get(ref(db, `conversations/${me.uid}/${key}`));
-    conv = snap.exists() ? snap.val() : {};
+    const _cs = await get(ref(db, `conversations/${me.uid}/${key}`));
+    conv = _cs.exists() ? _cs.val() : {};
     convCache[key] = conv;
   }
   let hdrName = conv.name || conv.email || key;
@@ -1195,12 +1214,12 @@ async function openChat(key, type) {
     document.getElementById('callAudioBtn').style.display = 'flex';
     document.getElementById('callVideoBtn').style.display = 'flex';
   } else if (type === 'group') {
-    const gs = await get(ref(db, `groupChats/${key}`));
-    const gd = gs.exists() ? gs.val() : {};
-    const memberCount = gd.members ? Object.keys(gd.members).length : 0;
-    hdrName = gd.name || conv.name || key;
-    hdrSub = memberCount + ' member' + (memberCount !== 1 ? 's' : '');
-    renderAv(document.getElementById('headerAvatar'), hdrName, gd.avatar || null, null, '#161514');
+    const _gfull = await get(ref(db, `groupChats/${key}`));
+    const _gd = _gfull.exists() ? _gfull.val() : {};
+    if (_gd.name) hdrName = _gd.name;
+    const _mc = _gd.members ? Object.keys(_gd.members).length : 0;
+    hdrSub = _mc + ' member' + (_mc !== 1 ? 's' : '');
+    renderAv(document.getElementById('headerAvatar'), hdrName, _gd.avatar||null, null, '#161514');
     document.getElementById('headerAvatar').style.display = 'flex';
     document.getElementById('callAudioBtn').style.display = 'none';
     document.getElementById('callVideoBtn').style.display = 'none';
@@ -1644,19 +1663,17 @@ async function pushMsg(data, preview) {
   await push(ref(db, chatPath(activeKey, activeType)), data);
 
   const ts = Date.now();
+  const myName = myProfile.username || myProfile.email;
 
   if (activeType === 'dm') {
-    // Resolve partner UID if not set (race condition on first open)
     let partnerUID = activePartnerUID;
     if (!partnerUID) {
-      const cs = await get(ref(db, `conversations/${me.uid}/${activeKey}`));
-      partnerUID = cs.val()?.uid || null;
+      const _pcs = await get(ref(db, `conversations/${me.uid}/${activeKey}`));
+      partnerUID = _pcs.val()?.uid || null;
       activePartnerUID = partnerUID;
     }
     await update(ref(db, `conversations/${me.uid}/${activeKey}`), { lastMessage: preview, lastTimestamp: ts });
-    if (partnerUID) {
-      await update(ref(db, `conversations/${partnerUID}/${activeKey}`), { lastMessage: preview, lastTimestamp: ts });
-    }
+    if (partnerUID) await update(ref(db, `conversations/${partnerUID}/${activeKey}`), { lastMessage: preview, lastTimestamp: ts });
   } else if (activeType === 'group') {
     const gs = await get(ref(db, `groupChats/${activeKey}/members`));
     if (gs.exists()) {
