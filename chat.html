@@ -191,7 +191,7 @@ button,input,select{font-family:inherit}
 #reply-cancel:hover{color:var(--text)}
 
 /* Footer */
-.footer{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;background:var(--header-bg);z-index:1;position:relative}
+.footer{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:center;background:var(--header-bg);z-index:410;position:relative}
 .ft-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:7px;border-radius:8px;display:flex;align-items:center;flex-shrink:0;transition:color 0.15s}
 .ft-btn:hover:not(:disabled){color:var(--accent)}
 .ft-btn:disabled{opacity:0.3;cursor:not-allowed}
@@ -210,7 +210,7 @@ button,input,select{font-family:inherit}
 .edit-input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.35);color:inherit;font-size:inherit;font-family:inherit;width:100%;outline:none;padding:2px 0;min-width:120px}
 
 /* ── PICKER POPUP (emoji + gif) ── */
-#pickerPopup{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);width:340px;background:var(--card);border:1px solid var(--border);border-radius:16px;z-index:500;display:none;box-shadow:0 10px 40px rgba(0,0,0,0.6);overflow:hidden;flex-direction:column}
+#pickerPopup{position:fixed;bottom:62px;left:14px;width:340px;background:var(--card);border:1px solid var(--border);border-radius:16px;z-index:400;display:none;box-shadow:0 10px 40px rgba(0,0,0,0.6);overflow:hidden;flex-direction:column}
 #pickerPopup.visible{display:flex}
 .picker-tabs{display:flex;border-bottom:1px solid var(--border)}
 .picker-tab{flex:1;padding:10px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:0.85rem;font-weight:600;transition:all 0.15s;font-family:inherit}
@@ -854,7 +854,7 @@ window.closeSettings = closeSettings;
 
 // ─── Self render ───
 function renderSelf() {
-  const name = myProfile.username || myProfile.email || '';
+  const name = myProfile.username || (myProfile.email ? myProfile.email.split('@')[0] : '?');
   renderAv(document.getElementById('selfAvatar'), name, myProfile.avatar, myProfile.status, '#1a1918');
   renderAv(document.getElementById('settingsAvatar'), name, myProfile.avatar, myProfile.status, '#1a1918');
   const sn = document.getElementById('selfName'); if (sn) sn.textContent = name;
@@ -964,7 +964,7 @@ document.getElementById('settingsBtn').addEventListener('click', openSettings);
 document.getElementById('avatarInput').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   const data = await compressImage(f, 200, 0.82);
-  await update(ref(db, 'users/' + me.uid), { avatar: data });
+  await update(ref(db, 'users/' + me.uid), { avatar: data, updatedAt: Date.now() });
   e.target.value = '';
   // userCache updated via onValue listener above
 });
@@ -973,7 +973,10 @@ window.saveProfile = async () => {
   const name = document.getElementById('usernameInput').value.trim();
   const bio  = document.getElementById('bioInput').value.trim();
   if (!name) { document.getElementById('profileSaveStatus').textContent = 'Name required.'; return; }
-  await update(ref(db, 'users/' + me.uid), { username: name, bio });
+  await update(ref(db, 'users/' + me.uid), { username: name, bio, updatedAt: Date.now() });
+  // Bust cache so others see updated name
+  delete userCache[me.uid];
+  userCache[me.uid] = { ...myProfile, username: name, bio };
   document.getElementById('profileSaveStatus').textContent = '✓ Saved!';
   setTimeout(() => document.getElementById('profileSaveStatus').textContent = '', 1500);
 };
@@ -993,8 +996,29 @@ window.saveAppearance = () => {
   document.getElementById('messages').style.fontSize = fs + 'px';
   localStorage.setItem('g-fontsize', fs);
 };
-window.saveNotifs = () => {};
-window.savePrivacy = () => {};
+window.saveNotifs = () => {
+  const vals = {
+    notifMessages: document.getElementById('notifMessages').checked,
+    notifGroups: document.getElementById('notifGroups').checked,
+    notifSound: document.getElementById('notifSound').checked,
+    notifDesktop: document.getElementById('notifDesktop').checked,
+    notifPreview: document.getElementById('notifPreview').checked,
+    notifVolume: document.getElementById('notifVolume').value
+  };
+  localStorage.setItem('g-notifs', JSON.stringify(vals));
+  if (vals.notifDesktop && Notification.permission === 'default') Notification.requestPermission();
+  alert('Notification settings saved!');
+};
+window.savePrivacy = async () => {
+  await update(ref(db, 'users/' + me.uid), {
+    privacyStatus: document.getElementById('privacyStatus').checked,
+    privacyLastSeen: document.getElementById('privacyLastSeen').checked,
+    privacyMsg: document.getElementById('privacyMsg').checked,
+    readReceipts: document.getElementById('privacyReadReceipts').checked,
+    updatedAt: Date.now()
+  });
+  alert('Privacy settings saved!');
+};
 
 function applyTheme(val) {
   document.documentElement.style.setProperty('--accent', val);
@@ -1060,7 +1084,12 @@ function loadConvs() {
 
       const info = document.createElement('div');
       info.className = 'ce-info';
-      info.innerHTML = `<div class="ce-name">${esc(data.name || data.email || key)}</div><div class="ce-preview">${esc(data.lastMessage || '')}</div>`;
+      // For groups, show friendly placeholder; for DMs show username not email/key
+      let displayName = data.name || '';
+      if (!displayName || displayName === key) {
+        displayName = data.type === 'group' ? 'Group Chat' : (data.email ? data.email.split('@')[0] : '...');
+      }
+      info.innerHTML = `<div class="ce-name">${esc(displayName)}${data.type==='group'?' <span style="font-size:0.65rem;background:rgba(var(--accent-rgb),0.25);color:var(--accent);padding:1px 5px;border-radius:4px;vertical-align:middle;font-weight:700">GROUP</span>':''}</div><div class="ce-preview">${esc(data.lastMessage || '')}</div>`;
 
       entry.appendChild(avDiv);
       entry.appendChild(info);
@@ -1072,14 +1101,25 @@ function loadConvs() {
         let avSrc = null, status = null;
         if (data.type !== 'group' && data.uid) {
           const p = await getCachedUser(data.uid);
-          name = p?.username || p?.email || name;
+          // Always use username, never show email as display name
+          name = p?.username || (p?.email ? p.email.split('@')[0] : name);
           avSrc = p?.avatar; status = p?.status;
           entry.querySelector('.ce-name').textContent = name;
         } else if (data.type === 'group') {
           const _ggs = await get(ref(db, `groupChats/${key}`));
           if (_ggs.exists()) {
             if (_ggs.val().avatar) avSrc = _ggs.val().avatar;
-            if (_ggs.val().name) { name = _ggs.val().name; entry.querySelector('.ce-name').textContent = name; }
+            if (_ggs.val().name) {
+              name = _ggs.val().name;
+              entry.querySelector('.ce-name').innerHTML = esc(name) + ' <span style="font-size:0.65rem;background:rgba(var(--accent-rgb),0.25);color:var(--accent);padding:1px 5px;border-radius:4px;vertical-align:middle;font-weight:700">GROUP</span>';
+            }
+          } else {
+            // Try old path: groups/KEY for backwards compat
+            const _ogs = await get(ref(db, `groups/${key}`));
+            if (_ogs.exists() && _ogs.val().name) {
+              name = _ogs.val().name;
+              entry.querySelector('.ce-name').innerHTML = esc(name) + ' <span style="font-size:0.65rem;background:rgba(var(--accent-rgb),0.25);color:var(--accent);padding:1px 5px;border-radius:4px;vertical-align:middle;font-weight:700">GROUP</span>';
+            }
           }
         }
         renderAv(avDiv, name, avSrc, status, '#1a1918');
@@ -1200,14 +1240,15 @@ async function openChat(key, type) {
     conv = _cs.exists() ? _cs.val() : {};
     convCache[key] = conv;
   }
-  let hdrName = conv.name || conv.email || key;
+  let hdrName = conv.name || (conv.email ? conv.email.split('@')[0] : key);
   let hdrSub = '';
   activePartnerUID = null;
 
   if (type === 'dm' && conv.uid) {
     activePartnerUID = conv.uid;
     const p = await getCachedUser(conv.uid);
-    hdrName = p?.username || p?.email || hdrName;
+    // Always prefer username, fall back to first part of email
+    hdrName = p?.username || (p?.email ? p.email.split('@')[0] : hdrName);
     hdrSub = statusLabel(p?.status || 'offline');
     renderAv(document.getElementById('headerAvatar'), hdrName, p?.avatar, p?.status, '#161514');
     document.getElementById('headerAvatar').style.display = 'flex';
@@ -1297,7 +1338,7 @@ async function buildMsg(key, m, msgMap, type) {
   const isSent = m.sender === me.uid;
   const isGroup = type === 'group';
   const senderP = await getCachedUser(m.sender);
-  const senderName = isSent ? (myProfile.username || 'You') : (senderP?.username || senderP?.email || '?');
+  const senderName = isSent ? (myProfile.username || myProfile.email?.split('@')[0] || 'You') : (senderP?.username || senderP?.email?.split('@')[0] || '?');
 
   const row = document.createElement('div');
   row.className = 'msg-row ' + (isSent ? 'sent' : 'received');
@@ -1718,6 +1759,9 @@ window.createGroup = async () => {
   const checked = [...document.querySelectorAll('#memberPickList input:checked')];
   if (!checked.length) { alert('Select at least one member.'); return; }
 
+  const btn = document.querySelector('#groupModal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+
   const members = { [me.uid]: true };
   checked.forEach(cb => { members[cb.value] = true; });
 
@@ -1728,17 +1772,15 @@ window.createGroup = async () => {
 
   const ts = Date.now();
   for (const uid of Object.keys(members)) {
-    // Check if conv already exists for this uid/gKey combo
-    const ex = await get(ref(db, `conversations/${uid}/${gKey}`));
-    if (!ex.exists()) {
-      await set(ref(db, `conversations/${uid}/${gKey}`), {
-        name, type: 'group', lastMessage: '', lastTimestamp: ts
-      });
-    }
+    await set(ref(db, `conversations/${uid}/${gKey}`), {
+      name, type: 'group', lastMessage: 'Group created', lastTimestamp: ts
+    });
   }
 
   document.getElementById('groupModal').classList.remove('visible');
   document.getElementById('groupNameInput').value = '';
+  document.querySelectorAll('#memberPickList input').forEach(cb => cb.checked = false);
+  if (btn) { btn.disabled = false; btn.textContent = 'Create Group'; }
   openChat(gKey, 'group');
 };
 
