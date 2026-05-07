@@ -778,7 +778,7 @@ button,input,select{font-family:inherit}
 <script type="module">
 import { initializeApp } from 'https://esm.sh/firebase/app';
 import { getAuth, onAuthStateChanged, signOut } from 'https://esm.sh/firebase/auth';
-import { getDatabase, ref, get, push, onValue, set, update, remove, serverTimestamp, off } from 'https://esm.sh/firebase/database';
+import { getDatabase, ref, get, push, onValue, set, update, remove, serverTimestamp} from 'https://esm.sh/firebase/database';
 
 const CFG = {
   apiKey:"AIzaSyBJ55WRtAvAXaUerycWjb1-Zf1E-VEmDDo",
@@ -1048,7 +1048,7 @@ function applyStoredWallpaper() {
 
 // ─── Conversations (deduplicated) ───
 function loadConvs() {
-  if (convUnsub) off(ref(db, 'conversations/' + me.uid));
+  if (convUnsub) { try { convUnsub(); } catch(e) {} convUnsub = null; }
   convUnsub = onValue(ref(db, 'conversations/' + me.uid), snap => {
     const list = document.getElementById('chatList');
 
@@ -1225,14 +1225,35 @@ async function startDM(uid, profile) {
   openChat(chatKey, 'dm');
 }
 
-// ─── Open chat ───
+// ─── Path helpers ───
+// Stores the resolved path for the active chat so pushMsg uses the exact same path
+let activeChatPath = null;
+
 function chatPath(key, type) {
   return type === 'group' ? `groupChats/${key}/messages` : `chats/${key}`;
 }
 
+async function resolveGroupPath(key) {
+  // Try new path first, fall back to old
+  const newSnap = await get(ref(db, `groupChats/${key}`));
+  if (newSnap.exists()) return { base: `groupChats/${key}`, messages: `groupChats/${key}/messages`, data: newSnap.val() };
+  const oldSnap = await get(ref(db, `groups/${key}`));
+  if (oldSnap.exists()) return { base: `groups/${key}`, messages: `groups/${key}/messages`, data: oldSnap.val() };
+  return { base: `groupChats/${key}`, messages: `groupChats/${key}/messages`, data: {} };
+}
+
+// ─── Open chat ───
 async function openChat(key, type) {
   activeKey = key; activeType = type;
   lastRenderedKeys = [];
+  activeChatPath = null;
+
+  // Enable inputs IMMEDIATELY so user doesn't wait for async resolution
+  ['msgInput','sendBtn','attachBtn','emojiBtn'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.disabled = false;
+  });
+  document.getElementById('msgInput').placeholder = 'Loading…';
+  document.getElementById('messages').innerHTML = '<div class="empty-state">Loading…</div>';
 
   let conv = convCache[key];
   if (!conv) {
@@ -1240,23 +1261,45 @@ async function openChat(key, type) {
     conv = _cs.exists() ? _cs.val() : {};
     convCache[key] = conv;
   }
+
+  // Detect type from data if not explicitly set (old entries may lack type field)
+  if (!type || type === 'dm') {
+    // If key looks like a group key (Firebase push key starts with -)
+    if (conv.type === 'group' || conv.groupID) type = 'group';
+    else type = 'dm';
+    activeType = type;
+  }
+
   let hdrName = conv.name || (conv.email ? conv.email.split('@')[0] : key);
   let hdrSub = '';
   activePartnerUID = null;
 
-  if (type === 'dm' && conv.uid) {
-    activePartnerUID = conv.uid;
-    const p = await getCachedUser(conv.uid);
-    // Always prefer username, fall back to first part of email
-    hdrName = p?.username || (p?.email ? p.email.split('@')[0] : hdrName);
-    hdrSub = statusLabel(p?.status || 'offline');
-    renderAv(document.getElementById('headerAvatar'), hdrName, p?.avatar, p?.status, '#161514');
+  if (type === 'dm') {
+    // Get partner UID - handle old convs that stored uid directly, or need lookup
+    let partnerUID = conv.uid;
+    if (!partnerUID && conv.email) {
+      // Look up by email
+      const usnap = await get(ref(db, 'users'));
+      if (usnap.exists()) {
+        const match = Object.values(usnap.val()).find(u => u.email === conv.email);
+        if (match) { partnerUID = match.uid; convCache[key] = { ...conv, uid: partnerUID }; }
+      }
+    }
+    activePartnerUID = partnerUID;
+    if (partnerUID) {
+      const p = await getCachedUser(partnerUID);
+      hdrName = p?.username || (p?.email ? p.email.split('@')[0] : hdrName);
+      hdrSub = statusLabel(p?.status || 'offline');
+      renderAv(document.getElementById('headerAvatar'), hdrName, p?.avatar, p?.status, '#161514');
+    }
     document.getElementById('headerAvatar').style.display = 'flex';
     document.getElementById('callAudioBtn').style.display = 'flex';
     document.getElementById('callVideoBtn').style.display = 'flex';
-  } else if (type === 'group') {
-    const _gfull = await get(ref(db, `groupChats/${key}`));
-    const _gd = _gfull.exists() ? _gfull.val() : {};
+    activeChatPath = `chats/${key}`;
+  } else {
+    // Group - resolve correct path (new or old format)
+    const gResolved = await resolveGroupPath(key);
+    const _gd = gResolved.data;
     if (_gd.name) hdrName = _gd.name;
     const _mc = _gd.members ? Object.keys(_gd.members).length : 0;
     hdrSub = _mc + ' member' + (_mc !== 1 ? 's' : '');
@@ -1264,24 +1307,23 @@ async function openChat(key, type) {
     document.getElementById('headerAvatar').style.display = 'flex';
     document.getElementById('callAudioBtn').style.display = 'none';
     document.getElementById('callVideoBtn').style.display = 'none';
+    activeChatPath = gResolved.messages;
   }
 
   document.getElementById('hdrName').textContent = hdrName;
   document.getElementById('hdrSub').textContent = hdrSub;
 
-  // Enable inputs
-  ['msgInput','sendBtn','attachBtn','emojiBtn'].forEach(id => {
-    const el = document.getElementById(id); el.disabled = false;
-  });
-  document.getElementById('msgInput').placeholder = `Message ${hdrName}…`;
+  const inp = document.getElementById('msgInput');
+  inp.placeholder = `Message ${hdrName}…`;
+  inp.focus();
 
   // Highlight sidebar
   document.querySelectorAll('.chat-entry').forEach(el => el.classList.remove('active'));
-  document.querySelector(`.chat-entry[data-id="${key}"]`)?.classList.add('active');
+  document.querySelector(`.chat-entry[data-id="${CSS.escape(key)}"]`)?.classList.add('active');
 
   clearReply();
-  if (chatUnsub) { off(ref(db, chatPath(key, type))); }
-  chatUnsub = onValue(ref(db, chatPath(key, type)), snap => renderMessages(snap, key, type));
+  if (chatUnsub) { try { chatUnsub(); } catch(e) {} chatUnsub = null; }
+  chatUnsub = onValue(ref(db, activeChatPath), snap => renderMessages(snap, key, type));
 }
 
 // ─── Render messages (no-flash diff) ───
@@ -1496,7 +1538,7 @@ document.addEventListener('click', hideCtxMenu);
 document.addEventListener('keydown', e => { if (e.key==='Escape') { hideCtxMenu(); clearReply(); closeProfile(); } });
 
 async function deleteMsg(key) {
-  await update(ref(db, chatPath(activeKey, activeType) + '/' + key), { deleted: true, text: '' });
+  await update(ref(db, activeChatPath + '/' + key), { deleted: true, text: '' });
 }
 
 function startEdit(key, cur) {
@@ -1508,7 +1550,7 @@ function startEdit(key, cur) {
   inp.onkeydown = async ev => {
     if (ev.key === 'Enter') {
       const t = inp.value.trim(); if (!t) return;
-      await update(ref(db, chatPath(activeKey, activeType) + '/' + key), { text: t, edited: true });
+      await update(ref(db, activeChatPath + '/' + key), { text: t, edited: true });
     }
     if (ev.key === 'Escape') { inp.replaceWith(document.createTextNode(cur)); }
   };
@@ -1700,26 +1742,34 @@ async function sendMsg() {
 }
 
 async function pushMsg(data, preview) {
+  if (!activeChatPath) { console.error('No active chat path'); return; }
   if (replyTo) { data.replyTo = replyTo.key; clearReply(); }
-  await push(ref(db, chatPath(activeKey, activeType)), data);
+
+  await push(ref(db, activeChatPath), data);
 
   const ts = Date.now();
-  const myName = myProfile.username || myProfile.email;
+  const myName = myProfile.username || (myProfile.email ? myProfile.email.split('@')[0] : 'Someone');
 
   if (activeType === 'dm') {
     let partnerUID = activePartnerUID;
-    if (!partnerUID) {
-      const _pcs = await get(ref(db, `conversations/${me.uid}/${activeKey}`));
-      partnerUID = _pcs.val()?.uid || null;
-      activePartnerUID = partnerUID;
-    }
     await update(ref(db, `conversations/${me.uid}/${activeKey}`), { lastMessage: preview, lastTimestamp: ts });
-    if (partnerUID) await update(ref(db, `conversations/${partnerUID}/${activeKey}`), { lastMessage: preview, lastTimestamp: ts });
+    if (partnerUID) {
+      await update(ref(db, `conversations/${partnerUID}/${activeKey}`), { lastMessage: myName + ': ' + preview, lastTimestamp: ts });
+    }
   } else if (activeType === 'group') {
-    const gs = await get(ref(db, `groupChats/${activeKey}/members`));
-    if (gs.exists()) {
-      for (const uid of Object.keys(gs.val())) {
-        await update(ref(db, `conversations/${uid}/${activeKey}`), { lastMessage: preview, lastTimestamp: ts });
+    // Try both new and old group paths for members list
+    let members = null;
+    const newGs = await get(ref(db, `groupChats/${activeKey}/members`));
+    if (newGs.exists()) members = newGs.val();
+    else {
+      const oldGs = await get(ref(db, `groups/${activeKey}/members`));
+      if (oldGs.exists()) members = oldGs.val();
+    }
+    if (members) {
+      for (const uid of Object.keys(members)) {
+        await update(ref(db, `conversations/${uid}/${activeKey}`), {
+          lastMessage: myName + ': ' + preview, lastTimestamp: ts
+        });
       }
     }
   }
