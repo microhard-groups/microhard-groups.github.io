@@ -117,7 +117,7 @@
                         btn.textContent = 'Sign In';
                         return;
                     }
-                    window.location.href = 'maintenance.html';
+                    window.location.href = 'chat.html';
                 } else {
                     const userCred = await createUserWithEmailAndPassword(auth, email, password);
                     await sendEmailVerification(userCred.user);

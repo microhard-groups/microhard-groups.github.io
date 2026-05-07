@@ -864,12 +864,6 @@ function renderSelf() {
   const ed = document.getElementById('emailDisplay'); if (ed) ed.value = myProfile.email || '';
 }
 
-// Click self strip → settings
-document.getElementById('selfStrip').addEventListener('click', e => {
-  if (e.target.closest('#logoutBtn')) return;
-  openSettings();
-});
-
 // ─── Settings ───
 function initSettings() {
   // Nav
@@ -2059,9 +2053,6 @@ document.getElementById('wpRemoveBtn').addEventListener('click', () => {
   document.querySelectorAll('.wp-opt').forEach(el => el.classList.remove('selected'));
 });
 
-// ─── More wallpapers (patch WPS array inside initSettings via DOM rebuild) ───
-// Done via initSettings override below:
-const _origInitSettings = initSettings;
 
 </script>
 </body>
